@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+    # sales forecasst service
+    forecast_service:
+        platform: linux/arm64
+        image: ariya23156/sale-forecast-service:latest
+        container_name: forecast_service
+        build:
+            context: ./services/forecast_service
+            dockerfile: Dockerfile
+            args:
+                FORECAST_SERVICE_PORT: ${FORECAST_SERVICE_PORT}
+        env_file:
+            - .env
+        environment:
+            - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
+        networks:
+            - forecast_network
+        ports:
+            - ${FORECAST_SERVICE_PORT}:${FORECAST_SERVICE_PORT}
+        volumes:
+            - mlflow_data:${MLFLOW_ARTIFACT_ROOT}:ro
+
+    # service for triggering training/retraining
+    training_service:
+        platform: linux/arm64
+        container_name: training_service
+        build:
+            context: ./services/training_service
+            dockerfile: Dockerfile
+            args:
+                FORECAST_SERVICE_PORT: ${TRAINING_SERVICE_PORT}
+                MLFLOW_ARTIFACT_ROOT: ${MLFLOW_ARTIFACT_ROOT}
+        env_file:
+            - .env
+        environment:
+            - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
+        networks:
+            - forecast_network
+        ports:
+            - ${TRAINING_SERVICE_PORT}:${TRAINING_SERVICE_PORT}
+        volumes:
+            - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
+
+    # ML platform / experiment tracking
+    mlflow:
+        platform: linux/arm64
+        container_name: mlflow_server
+        # restart: always
+        build:
+            context: ./services/mlflow
+            dockerfile: Dockerfile
+            args:
+                MLFLOW_PORT: ${MLFLOW_PORT}
+        env_file:
+            - .env
+        environment:
+            - BACKEND_STORE_URI=postgresql://mlflow_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/mlflow_pg_db
+        networks:
+            - forecast_network
+        ports:
+            - "${MLFLOW_PORT}:${MLFLOW_PORT}"
+        volumes:
+            - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
+        depends_on:
+            postgres:
+                condition: service_healthy
+
+    # sql database
+    postgres:
+        platform: linux/arm64
+        container_name: postgres_server
+        image: postgres:15.3
+        # restart: always
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
+            - POSTGRES_DB=postgres
+        networks:
+            - forecast_network
+        volumes:
+            - ./services/postgres/docker_postgres_init.sql:/docker-entrypoint-initdb.d/docker_postgres_init.sql
+            - pgdata:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+networks:
+    forecast_network:
+        driver: "bridge"
+
+volumes:
+    mlflow_data:
+    pgdata:

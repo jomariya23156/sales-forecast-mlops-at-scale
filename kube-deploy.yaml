@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fast-api-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fast-api
+  template:
+    metadata:
+      labels:
+        app: fast-api
+    spec:
+      containers:
+      - name: fast-api
+        image: ariya23156/sale-forecast-service:latest
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        env:
+        - name: FORECAST_SERVICE_PORT
+          value: "4242"
+        ports:
+          - containerPort: 4242
+      # for pulling from a private registry
+      # you also need to follow https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+      imagePullSecrets:
+      - name: regcred
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: fast-api-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: fast-api
+  ports:
+  - protocol: TCP
+    port: 4242
+    targetPort: 4242
+  

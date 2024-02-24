@@ -1,0 +1,1 @@
+docker build --build-args FORECAST_SERVICE_PORT=4242 -t forecast_service:latest .
