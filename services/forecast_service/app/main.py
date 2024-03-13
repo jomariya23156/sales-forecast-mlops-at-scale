@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from handlers.mlflow import MLflowHandler
 from helpers import ForecastRequest, create_forecast_index
+from fastapi.middleware.cors import CORSMiddleware
 
 log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
@@ -42,6 +43,18 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# for local testing calls from JS
+origins = [
+    "http://localhost",
+    "http://localhost:6969",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/health", status_code=200)
 async def health_check():

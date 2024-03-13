@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast</title>
+</head>
+<body>
+    <h1>Weather Forecast</h1>
+    <button onclick="getForecast()">Get Forecast</button>
+    <div id="forecast"></div>
+
+    <script>
+        function getForecast() {
+            const requestBody = [
+                {
+                    "store_id": "4",
+                    "begin_date": "2023-03-01T00:00:00Z",
+                    "end_date": "2023-03-07T00:00:00Z"
+                },
+                {
+                    "store_id": "3",
+                    "begin_date": "2023-03-01T00:00:00Z",
+                    "end_date": "2023-03-07T00:00:00Z"
+                },
+                {
+                    "store_id": "10",
+                    "begin_date": "2023-03-01T00:00:00Z",
+                    "end_date": "2023-03-07T00:00:00Z"
+                }
+            ];
+
+            fetch('http://localhost:4242/forecast', {
+            // fetch('http://forecast_service:4242/forecast', { // not working cuz it will be called from client browser (not within internal docker network)
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('forecast').innerText = JSON.stringify(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>

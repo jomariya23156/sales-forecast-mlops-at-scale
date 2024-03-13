@@ -1,0 +1,6 @@
+requests>=2.31.0
+Jinja2==3.1.2
+fastapi==0.101.1
+pydantic>=1.2.0,<2.0.0
+uvicorn[standard]==0.23.2
+python-multipart==0.0.6

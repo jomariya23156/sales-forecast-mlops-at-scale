@@ -22,6 +22,46 @@ services:
         volumes:
             - mlflow_data:${MLFLOW_ARTIFACT_ROOT}:ro
 
+    # Temp web UI interface to test some native JS/HTML
+    # temp_ui:
+    #     platform: linux/arm64
+    #     container_name: temp_ui
+    #     build:
+    #         context: ./services/temp_ui
+    #         dockerfile: Dockerfile
+    #         args:
+    #             TEMP_UI_PORT: 6969
+    #     env_file:
+    #         - .env
+    #     environment:
+    #         - TEMP_UI_PORT=6969
+    #     networks:
+    #         - forecast_network
+    #     ports:
+    #         - 6969:6969
+    #     volumes:
+    #         - /Users/ariyasontrapornpol/Desktop/personal_projects/dev_workspace/dev_repos/sales-forecast-mlops-at-scale/services/temp_ui/app/:/service/app/
+
+    # Web UI interface
+    web_ui:
+        platform: linux/arm64
+        container_name: web_ui
+        build:
+            context: ./services/web_ui
+            dockerfile: Dockerfile
+            args:
+                WEB_UI_PORT: ${WEB_UI_PORT}
+        env_file:
+            - .env
+        environment:
+            - FORECAST_ENDPOINT_URI=http://nginx/api/forecasters/forecast
+        networks:
+            - forecast_network
+        ports:
+            - ${WEB_UI_PORT}:${WEB_UI_PORT}
+        volumes:
+            - /Users/ariyasontrapornpol/Desktop/personal_projects/dev_workspace/dev_repos/sales-forecast-mlops-at-scale/services/web_ui/app/main.py:/service/app/main.py
+
     # service for triggering training/retraining
     training_service:
         platform: linux/arm64
@@ -42,6 +82,24 @@ services:
             - ${TRAINING_SERVICE_PORT}:${TRAINING_SERVICE_PORT}
         volumes:
             - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
+
+    nginx:
+        platform: linux/arm64
+        container_name: nginx
+        # restart: always
+        build:
+            context: ./services/nginx
+            dockerfile: Dockerfile
+        env_file:
+            - .env
+        networks:
+            - forecast_network
+        ports:
+            - ${NGINX_PORT}:${NGINX_PORT}
+        depends_on:
+            - forecast_service
+            - web_ui
+            - training_service
 
     # ML platform / experiment tracking
     mlflow:
