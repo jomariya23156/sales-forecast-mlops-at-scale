@@ -1,6 +1,60 @@
 version: '3.8'
 
 services:
+
+    # dev workspace
+    jupyter:
+        # platform: linux/x86_64 # for others (mostly) or can just remove this line
+        platform: linux/arm64 # for Mac M1
+        container_name: jupyter_dev_repo
+        shm_size: '2gb'
+        build:
+            context: ./services/jupyter
+            dockerfile: Dockerfile
+            args:
+                NB_USER: ${JUPYTER_USER}
+                NB_PWD: 123456789
+                NB_UID: 1412
+                CONDA_DIR: /opt/anaconda3
+                ARCH: aarch64 # aarch64 for Mac M1 | x86_64 for others (mostly)
+                JUPYTER_PORT: ${JUPYTER_PORT}
+                MLFLOW_ARTIFACT_ROOT: ${MLFLOW_ARTIFACT_ROOT}
+                CENTRAL_STORAGE_PATH: /home/${JUPYTER_USER}/central_storage
+                MAIN_CONDA_ENV_NAME: computer-viz-dl
+        env_file:
+            - .env
+        environment:
+            - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
+        networks:
+            - forecast_network
+        ports: 
+            - "${JUPYTER_PORT}:${JUPYTER_PORT}"
+            - 8265:8265 # port for ray dashboard
+        volumes:
+            - ./:/home/${JUPYTER_USER}/workspace/
+            # - ./kaggle.json:/home/${JUPYTER_USER}/.kaggle/kaggle.json
+            - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
+            - conda_data:/opt/anaconda3
+
+    kafka:
+        platform: linux/arm64
+        container_name: kafka
+        image: bitnami/kafka:latest
+        ports:
+            - 9094:9094
+        networks:
+            - forecast_network
+        environment:
+            - KAFKA_CFG_NODE_ID=0
+            - KAFKA_CFG_PROCESS_ROLES=controller,broker
+            - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+            - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+            - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+            - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+            - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+        volumes:
+            - kafka_data:/bitnami/kafka
+
     # sales forecasst service
     forecast_service:
         platform: linux/arm64
@@ -22,26 +76,6 @@ services:
         volumes:
             - mlflow_data:${MLFLOW_ARTIFACT_ROOT}:ro
 
-    # Temp web UI interface to test some native JS/HTML
-    # temp_ui:
-    #     platform: linux/arm64
-    #     container_name: temp_ui
-    #     build:
-    #         context: ./services/temp_ui
-    #         dockerfile: Dockerfile
-    #         args:
-    #             TEMP_UI_PORT: 6969
-    #     env_file:
-    #         - .env
-    #     environment:
-    #         - TEMP_UI_PORT=6969
-    #     networks:
-    #         - forecast_network
-    #     ports:
-    #         - 6969:6969
-    #     volumes:
-    #         - /Users/ariyasontrapornpol/Desktop/personal_projects/dev_workspace/dev_repos/sales-forecast-mlops-at-scale/services/temp_ui/app/:/service/app/
-
     # Web UI interface
     web_ui:
         platform: linux/arm64
@@ -57,8 +91,8 @@ services:
             - FORECAST_ENDPOINT_URI=http://nginx/api/forecasters/forecast
         networks:
             - forecast_network
-        ports:
-            - ${WEB_UI_PORT}:${WEB_UI_PORT}
+        # ports:
+        #     - ${WEB_UI_PORT}:${WEB_UI_PORT}
         volumes:
             - /Users/ariyasontrapornpol/Desktop/personal_projects/dev_workspace/dev_repos/sales-forecast-mlops-at-scale/services/web_ui/app/main.py:/service/app/main.py
 
@@ -78,8 +112,8 @@ services:
             - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
         networks:
             - forecast_network
-        ports:
-            - ${TRAINING_SERVICE_PORT}:${TRAINING_SERVICE_PORT}
+        # ports:
+        #     - ${TRAINING_SERVICE_PORT}:${TRAINING_SERVICE_PORT}
         volumes:
             - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
 
@@ -145,6 +179,24 @@ services:
             interval: 5s
             timeout: 5s
             retries: 5
+    
+    # ui for database
+    pgadmin:
+        platform: linux/arm64
+        image: dpage/pgadmin4
+        # restart: always
+        environment:
+            - PGADMIN_DEFAULT_EMAIL=pgadmin@gmail.com
+            - PGADMIN_DEFAULT_PASSWORD=SuperSecurePwdHere
+        networks:
+            - forecast_network
+        ports:
+            - "16543:80"
+        volumes:
+            - pgadmin_data:/var/lib/pgadmin
+        depends_on:
+            postgres:
+                condition: service_healthy
 
 networks:
     forecast_network:
@@ -153,3 +205,8 @@ networks:
 volumes:
     mlflow_data:
     pgdata:
+    pgadmin_data:
+    kafka_data:
+    # for dev
+    conda_data:
+    

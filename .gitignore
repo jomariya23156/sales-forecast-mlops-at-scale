@@ -3,3 +3,7 @@ __pycache__/
 .ipynb_checkpoints
 datasets/
 create_cred.sh
+kaggle.json
+services/airflow/config/
+services/airflow/plugins/
+services/airflow/logs/

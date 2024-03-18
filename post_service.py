@@ -23,7 +23,7 @@ body = [
 # resp = requests.post("http://localhost:4243/train", json=body)
 
 # reverse proxy test (nginx)
-resp = requests.post("http://localhost/api/trainers/train", json=body)
-# resp = requests.post("http://localhost/api/forecasters/forecast", json=body)
+# resp = requests.post("http://localhost/api/trainers/train", json=body)
+resp = requests.post("http://localhost/api/forecasters/forecast", json=body)
 print(resp.raw)
 pprint(resp.json(), indent=4)
