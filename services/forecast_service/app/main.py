@@ -17,14 +17,13 @@ logging.basicConfig(format=log_format, level=logging.INFO)
 # in production for reliability and scalability
 handlers = {}
 models = {}
-MODEL_BASE_NAME = f"prophet-retail-forecaster-store-"
+MODEL_BASE_NAME = f"prophet-retail-forecaster-store"
 
-
-async def get_model(store_id: str):
+async def get_model(store_id: str, item_name: str):
     global models
-    model_name = MODEL_BASE_NAME + f"{store_id}"
+    model_name = f'{MODEL_BASE_NAME}-{store_id}-{item_name}'
     if model_name not in models:
-        models[model_name] = handlers["mlflow"].get_production_model(store_id=store_id)
+        models[model_name] = handlers["mlflow"].get_production_model(model_name=model_name)
     return models[model_name]
 
 
@@ -56,6 +55,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/health", status_code=200)
 async def health_check():
     return {
@@ -78,7 +78,8 @@ async def forecast(forecast_request: List[ForecastRequest]):
     """
     forecasts = []
     for item in forecast_request:
-        model = await get_model(item.store_id)
+        model = await get_model(item.store_id, item.item_name)
+        logging.info(f'Got the model for store: {item.store_id} | product: {item.item_name}')
         forecast_input = create_forecast_index(
             begin_date=item.begin_date, end_date=item.end_date
         )

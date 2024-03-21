@@ -6,6 +6,7 @@ ARG MLFLOW_ARTIFACT_ROOT=$MLFLOW_ARTIFACT_ROOT
 # there is a pip package required psutil which requires gcc included in build-essential here
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         build-essential \
+        git \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -23,7 +24,5 @@ COPY app/ /service/app/
 EXPOSE $TRAINING_SERVICE_PORT
 
 WORKDIR /service/app
-
-COPY kaggle.json /root/.kaggle/kaggle.json
 
 CMD gunicorn main:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${TRAINING_SERVICE_PORT}

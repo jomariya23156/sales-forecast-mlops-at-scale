@@ -6,53 +6,45 @@ import numpy as np
 import pandas as pd
 import prophet
 from prophet import Prophet
-import kaggle
 import mlflow
-from plot_utils import plot_forecast, plot_store_data
+from collections import defaultdict
 from sklearn.metrics import (
     mean_absolute_error,
     mean_squared_error,
     mean_absolute_percentage_error,
     median_absolute_error,
 )
-
+from sklearn.model_selection import TimeSeriesSplit
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from sqlalchemy import create_engine
+from typing import Dict, Tuple
+from plot_utils import plot_forecast, plot_store_data
+from db_utils import get_latest_df_from_db
+
+SALES_TABLE_NAME = os.getenv('SALES_TABLE_NAME', 'rossman_sales')
+POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
+DB_CONNECTION_URL = os.getenv('DB_CONNECTION_URL', f'postgresql://spark_user:SuperSecurePwdHere@postgres:{POSTGRES_PORT}/spark_pg_db')
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5050")
 
 log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
 
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5050")
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 client = mlflow.MlflowClient(tracking_uri=MLFLOW_TRACKING_URI)
 
 app = FastAPI()
 
-def download_kaggle_dataset(
-    kaggle_dataset: str = "pratyushakar/rossmann-store-sales", out_path: str = "./"
-) -> None:
-    kaggle.api.dataset_download_files(
-        kaggle_dataset, path=out_path, unzip=True, quiet=False
-    )
-
-
 def prep_store_data(
-    df: pd.DataFrame, store_id: int = 4, store_open: int = 1
+    df: pd.DataFrame, store_id: int = 4, 
+    item_name: str = 'item_A', store_open: int = 1
 ) -> pd.DataFrame:
-    df["Date"] = pd.to_datetime(df["Date"])
-    df.rename(columns={"Date": "ds", "Sales": "y"}, inplace=True)
-    df_store = df[(df["Store"] == store_id) & (df["Open"] == store_open)].reset_index(
+    df["date"] = pd.to_datetime(df["date"])
+    df.rename(columns={"date": "ds", "sales": "y"}, inplace=True)
+    df_store = df[(df["store"] == store_id) & (df["itemname"] == item_name) & (df["open"] == store_open)].reset_index(
         drop=True
     )
     return df_store.sort_values("ds", ascending=True)
-
-
-def train_test_split_df(df: pd.DataFrame, train_fraction: float = 0.8):
-    # split data
-    train_index = int(train_fraction * df.shape[0])
-    df_train = df.copy().iloc[:train_index]
-    df_test = df.copy().iloc[train_index:]
-    return df_train, df_test
-
 
 def train_forecaster(
     df_train: pd.DataFrame, seasonality: dict
@@ -67,72 +59,76 @@ def train_forecaster(
     model.fit(df_train)
     return model
 
+def calculate_metrics(df_true, df_pred):
+    metrics = {
+            "rmse": mean_squared_error(
+                y_true=df_true["y"], y_pred=df_pred["yhat"], squared=False
+            ),
+            "mean_abs_perc_error": mean_absolute_percentage_error(
+                y_true=df_true["y"], y_pred=df_pred["yhat"]
+            ),
+            "mean_abs_error": mean_absolute_error(
+                y_true=df_true["y"], y_pred=df_pred["yhat"]
+            ),
+            "median_abs_error": median_absolute_error(
+                y_true=df_true["y"], y_pred=df_pred["yhat"]
+            ),
+        }
+    return metrics
 
-# def train_predict(
-#     df: pd.DataFrame, train_fraction: float, seasonality: dict
-# ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, int]:
-
-#     df_train, df_test, train_index = train_test_split_df(
-#         df, train_fraction=train_fraction
-#     )
-
-#     # init model
-#     model = train_forecaster(df_train)
-#     pred = model.predict(df_test)
-#     return pred, df_train, df_test, train_index
-
-
-@ray.remote(num_returns=3)
+@ray.remote(num_returns=2)
 def prep_train_predict(
     df: pd.DataFrame,
     store_id: int,
+    item_name: str,
     store_open: int = 1,
-    train_fraction: float = 0.75,
     seasonality: dict = {"yearly": True, "weekly": True, "daily": False},
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, int]:
+) -> Tuple[pd.DataFrame, Dict[str, float]]:
 
     with mlflow.start_run():
         logging.info("Started MLflow run")
-        df = prep_store_data(df, store_id=store_id, store_open=store_open)
+        store_item_df = prep_store_data(df, store_id=store_id, item_name=item_name, store_open=store_open)
+        logging.info(f'Retrieved data for store {store_id} product {item_name}: {len(store_item_df)}')
         logging.info("Preprocessed data")
 
-        logging.info("Splitting data")
-        df_train, df_test = train_test_split_df(df, train_fraction=train_fraction)
-        logging.info("Data split")
+        # Walk-Forward (anchored) cross validation
+        logging.info("Starting Walk-forward cross-validation")
+        tscv = TimeSeriesSplit(n_splits=5)  
+        all_metrics = defaultdict(list) 
 
-        mlflow.autolog()
-        logging.info("Started model training")
-        model = train_forecaster(df_train, seasonality)
+        for train_index, test_index in tscv.split(store_item_df):
+            df_train, df_test = store_item_df.iloc[train_index], store_item_df.iloc[test_index]
+
+            mlflow.autolog() 
+            cv_model = train_forecaster(df_train, seasonality) 
+            test_y_pred = cv_model.predict(df_test)
+            test_metrics = calculate_metrics(df_test, test_y_pred)
+            all_metrics['rmse'].append(test_metrics['rmse'])
+            all_metrics['mean_abs_perc_error'].append(test_metrics['mean_abs_perc_error'])
+            all_metrics['mean_abs_error'].append(test_metrics['mean_abs_error'])
+            all_metrics['median_abs_error'].append(test_metrics['median_abs_error'])
+
+        # Calculate Averaged Metrics
+        avg_metrics = {}
+        for metric_name, value_list in all_metrics.items():  # Assuming all splits have the same metrics
+            avg_metrics[metric_name] = sum(value_list) / len(value_list)
+        logging.info("Finished walk-forward cross-validation")
+
+        logging.info("Started a final model training")
+        final_model = train_forecaster(store_item_df, seasonality)
         logging.info("Trained model")
-        mlflow.prophet.log_model(model, artifact_path="model")
+        mlflow.prophet.log_model(final_model, artifact_path="model")
         logging.info("Logged model to MLflow")
-
-        test_y_pred = model.predict(df_test)
-        test_metrics = {
-            "rmse": mean_squared_error(
-                y_true=df_test["y"], y_pred=test_y_pred["yhat"], squared=False
-            ),
-            "mean_abs_perc_error": mean_absolute_percentage_error(
-                y_true=df_test["y"], y_pred=test_y_pred["yhat"]
-            ),
-            "mean_abs_error": mean_absolute_error(
-                y_true=df_test["y"], y_pred=test_y_pred["yhat"]
-            ),
-            "median_abs_error": median_absolute_error(
-                y_true=df_test["y"], y_pred=test_y_pred["yhat"]
-            ),
-        }
-        logging.info("Computed test metrics")
-
+        
         run_id = mlflow.active_run().info.run_id
         mlflow.log_params(seasonality)
-        mlflow.log_metrics(test_metrics)
+        mlflow.log_metrics(avg_metrics)
 
     # The default path where the MLflow autologging function stores the model
     artifact_path = "model"
     model_uri = f"runs:/{run_id}/{artifact_path}"
 
-    model_name = f"prophet-retail-forecaster-store-{store_id}"
+    model_name = f"prophet-retail-forecaster-store-{store_id}-{item_name}"
     model_details = mlflow.register_model(model_uri=model_uri, name=model_name)
     logging.info("Registered model")
 
@@ -144,28 +140,22 @@ def prep_train_predict(
     )
     logging.info("Transitioned model to production stage")
 
-    return test_y_pred, df_train, df_test
+    return store_item_df, avg_metrics
 
-
-@app.post('/train', status_code=200)
+@app.post("/train", status_code=200)
 def train(request: Request):
-    # If data present, read it in, otherwise, download it
-    file_path = "./train.csv"
-    if os.path.exists(file_path):
-        logging.info("Dataset found, reading into pandas dataframe.")
-        df = pd.read_csv(file_path)
-    else:
-        logging.info("Dataset not found, downloading ...")
-        download_kaggle_dataset()
-        logging.info("Reading dataset into pandas dataframe.")
-        df = pd.read_csv(file_path)
-
+    # retrieve latest 4 months data from db
+    logging.info("Retrieving 4 months data from db...")
+    df = get_latest_df_from_db(DB_CONNECTION_URL, SALES_TABLE_NAME, 
+                               date_col='date', last_days=(4*30))
+    logging.info(f'Retrieved data: {len(df)} rows')
     # optional: convert pandas df to ray df to further parallelize
     # but we need to change the preprocess functions calls too
     # dataset = ray.data.from_pandas(df)
 
-    # get all unique store ids
-    store_ids = df["Store"].unique()
+    # get all unique store ids & product names
+    store_ids = df["store"].unique()
+    item_names = df['itemname'].unique()
 
     # define params for modelling
     seasonality = {"yearly": True, "weekly": True, "daily": False}
@@ -175,16 +165,13 @@ def train(request: Request):
 
     start_time = time.time()
 
-    # for store_id in store_ids:
-    #     prep_train_predict.remote(df_id, store_id, seasonality=seasonality)
-
-    pred_obj_refs, train_obj_refs, test_obj_refs = map(
+    train_obj_refs, metrics_obj_refs = map(
         list,
         zip(
             *(
                 [
-                    prep_train_predict.remote(df_id, store_id, seasonality=seasonality)
-                    for store_id in store_ids
+                    prep_train_predict.remote(df_id, store_id, item_name, seasonality=seasonality)
+                    for store_id in store_ids for item_name in item_names
                 ]
             )
         ),
@@ -195,13 +182,52 @@ def train(request: Request):
     # call .get() ray won't wait til the tasks are done it will just submit the task
     # to the cluster and return ref objs immediately
     results = {
-        "predictions": ray.get(pred_obj_refs),
         "train_data": ray.get(train_obj_refs),
-        "test_data": ray.get(test_obj_refs),
+        "metrics": ray.get(metrics_obj_refs),
     }
     train_time = time.time() - start_time
 
     ray.shutdown()
-    logging.info(f"Models trained {len(store_ids)}")
+    logging.info(f"Models trained {len(store_ids)*len(item_names)}")
     logging.info(f"Took {train_time:.4f} seconds")
-    return {"message": "Successfully trained models", "n_trained_models": len(store_ids)}
+    return {
+        "message": "Successfully trained models",
+        "n_trained_models": len(store_ids)*len(item_names),
+    }
+
+
+@app.post("/{store_id}/{product_name}/train", status_code=200)
+def train_one(request: Request, store_id: int, product_name: str):
+    # retrieve latest 4 months data from db
+    logging.info("Retrieving 4 months data from db...")
+    df = get_latest_df_from_db(DB_CONNECTION_URL, SALES_TABLE_NAME, 
+                               date_col='date', last_days=(4*30))
+    logging.info(f'Retrieved data: {len(df)} rows')
+
+    if store_id not in df['store'].tolist() or product_name not in df['itemname'].tolist():
+        return JSONResponse(status_code=400, 
+                            content={"message": "store_id or product_name is not existed in the system."})
+
+    # define params for modelling
+    seasonality = {"yearly": True, "weekly": True, "daily": False}
+
+    ray.init(num_cpus=1, dashboard_host="0.0.0.0")
+    df_id = ray.put(df)
+
+    start_time = time.time()
+
+    train_obj_ref, metrics_obj_ref = prep_train_predict.remote(df_id, store_id, product_name, seasonality=seasonality)
+    results = {
+        "train_data": ray.get(train_obj_ref),
+        "metrics": ray.get(metrics_obj_ref),
+    }
+    train_time = time.time() - start_time
+
+    ray.shutdown()
+    logging.info(f"Models trained for store: {store_id} | Product: {product_name}")
+    logging.info(f"Took {train_time:.4f} seconds")
+    return {
+        "message": "Successfully trained a new model",
+        "store_id": store_id,
+        "product_name": product_name,
+    }

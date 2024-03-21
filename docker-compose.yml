@@ -71,8 +71,8 @@ services:
             - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
         networks:
             - forecast_network
-        ports:
-            - ${FORECAST_SERVICE_PORT}:${FORECAST_SERVICE_PORT}
+        # ports:
+        #     - ${FORECAST_SERVICE_PORT}:${FORECAST_SERVICE_PORT}
         volumes:
             - mlflow_data:${MLFLOW_ARTIFACT_ROOT}:ro
 
@@ -110,6 +110,7 @@ services:
             - .env
         environment:
             - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
+            - DB_CONNECTION_URL=postgresql://spark_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/spark_pg_db
         networks:
             - forecast_network
         # ports:

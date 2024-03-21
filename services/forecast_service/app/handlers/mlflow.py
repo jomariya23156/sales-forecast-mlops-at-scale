@@ -20,8 +20,7 @@ class MLflowHandler:
         except:
             return "Error calling MLflow"
 
-    def get_production_model(self, store_id: str) -> PyFuncModel:
-        model_name = f"prophet-retail-forecaster-store-{store_id}"
+    def get_production_model(self, model_name: str) -> PyFuncModel:
         model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/production")
         latest_versions_metadata = self.client.get_latest_versions(name=model_name)
         latest_model_version_metadata = self.client.get_model_version(

@@ -7,3 +7,5 @@ kaggle.json
 services/airflow/config/
 services/airflow/plugins/
 services/airflow/logs/
+services/airflow/spark_streaming_checkpoints/
+test_latest_4m.csv

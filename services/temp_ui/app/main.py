@@ -16,8 +16,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-templates = Jinja2Templates(directory='templates')
+templates = Jinja2Templates(directory="templates")
 
-@app.get('/')
+
+@app.get("/")
 def index(request: Request):
-    return templates.TemplateResponse('index.html', {'request': request})
+    return templates.TemplateResponse("index.html", {"request": request})
