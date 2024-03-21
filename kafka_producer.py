@@ -20,7 +20,7 @@ def preprocess_input_df(df: pd.DataFrame) -> pd.DataFrame:
     # cuz there are also 'a', 'b', 'c', 'd' so it should be str
     df["stateholiday"] = df["stateholiday"].astype(str)
     # add a dummy item name as an example for extensibility
-    df["itemname"] = "item_A"
+    df["productname"] = "product_A"
     df = df.sort_values("date", ascending=True).reset_index(drop=True)
     return df
 

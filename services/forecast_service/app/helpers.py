@@ -6,7 +6,7 @@ import pandas as pd
 
 class ForecastRequest(BaseModel):
     store_id: str
-    item_name: str
+    product_name: str
     begin_date: Union[str, None] = None
     end_date: Union[str, None] = None
 

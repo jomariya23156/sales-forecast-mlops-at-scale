@@ -4,19 +4,19 @@ from pprint import pprint
 body = [
     {
         "store_id": "4",
-        "item_name": "item_A",
+        "product_name": "product_A",
         "begin_date": "2023-03-01T00:00:00Z",
         "end_date": "2023-03-07T00:00:00Z",
     },
     {
         "store_id": "3",
-        "item_name": "item_A",
+        "product_name": "product_A",
         "begin_date": "2023-03-01T00:00:00Z",
         "end_date": "2023-03-07T00:00:00Z",
     },
     {
         "store_id": "10",
-        "item_name": "item_A",
+        "product_name": "product_A",
         "begin_date": "2023-03-01T00:00:00Z",
         "end_date": "2023-03-07T00:00:00Z",
     },
@@ -27,7 +27,7 @@ body = [
 
 # reverse proxy test (nginx)
 # resp = requests.post("http://localhost/api/trainers/train", json=body)
-resp = requests.post("http://localhost/api/trainers/1000/item_A/train", json=body)
-# resp = requests.post("http://localhost/api/forecasters/forecast", json=body)
+# resp = requests.post("http://localhost/api/trainers/1000/product_A/train", json=body)
+resp = requests.post("http://localhost/api/forecasters/forecast", json=body)
 print(resp.raw)
 pprint(resp.json(), indent=4)

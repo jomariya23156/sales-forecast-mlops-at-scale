@@ -62,7 +62,7 @@ def process_df(df) -> DataFrame:
             StructField("promo", IntegerType(), True),
             StructField("stateholiday", StringType(), True),
             StructField("schoolholiday", StringType(), True),
-            StructField("itemname", StringType(), True),
+            StructField("productname", StringType(), True),
         ]
     )
     processed_df = (

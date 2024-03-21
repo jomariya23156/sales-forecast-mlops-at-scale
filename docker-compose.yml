@@ -29,7 +29,6 @@ services:
             - forecast_network
         ports: 
             - "${JUPYTER_PORT}:${JUPYTER_PORT}"
-            - 8265:8265 # port for ray dashboard
         volumes:
             - ./:/home/${JUPYTER_USER}/workspace/
             # - ./kaggle.json:/home/${JUPYTER_USER}/.kaggle/kaggle.json
@@ -113,7 +112,8 @@ services:
             - DB_CONNECTION_URL=postgresql://spark_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/spark_pg_db
         networks:
             - forecast_network
-        # ports:
+        ports:
+            - 8265:8265 # port for ray dashboard
         #     - ${TRAINING_SERVICE_PORT}:${TRAINING_SERVICE_PORT}
         volumes:
             - mlflow_data:${MLFLOW_ARTIFACT_ROOT}

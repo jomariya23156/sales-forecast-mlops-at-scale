@@ -24,7 +24,7 @@ class RossmanSalesTable(Base):
     promo = Column(Integer)
     stateholiday = Column(String)
     schoolholiday = Column(String)
-    itemname = Column(String)
+    productname = Column(String)
 
 
 def prepare_db() -> None:
