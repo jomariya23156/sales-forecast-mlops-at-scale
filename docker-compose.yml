@@ -31,7 +31,6 @@ services:
             - "${JUPYTER_PORT}:${JUPYTER_PORT}"
         volumes:
             - ./:/home/${JUPYTER_USER}/workspace/
-            # - ./kaggle.json:/home/${JUPYTER_USER}/.kaggle/kaggle.json
             - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
             - conda_data:/opt/anaconda3
 
@@ -108,15 +107,38 @@ services:
         env_file:
             - .env
         environment:
+            # - RAY_ADDRESS=ray://ray:${RAY_HEAD_PORT}
             - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
             - DB_CONNECTION_URL=postgresql://spark_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/spark_pg_db
         networks:
             - forecast_network
-        ports:
-            - 8265:8265 # port for ray dashboard
+        depends_on:
+            - ray
+        # ports:
         #     - ${TRAINING_SERVICE_PORT}:${TRAINING_SERVICE_PORT}
         volumes:
+            - ./services/training_service/app/:/service/app/
             - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
+
+    ray:
+        platform: linux/arm64
+        image: rayproject/ray:2.9.3-py39-cpu-aarch64
+        build:
+            context: ./services/ray
+            dockerfile: Dockerfile
+            args:
+                MLFLOW_ARTIFACT_ROOT: ${MLFLOW_ARTIFACT_ROOT}
+        shm_size: '2gb'
+        env_file:
+            - .env
+        environment:
+            - RAY_REDIS_ADDRESS=redis:${REDIS_PORT}
+        networks:
+            - forecast_network
+        ports:
+            - ${RAY_DASHBOARD_PORT}:${RAY_DASHBOARD_PORT} # port for ray dashboard
+        # command: sleep infinity
+        # command: ray start --head --port=${RAY_HEAD_PORT} --dashboard-host=0.0.0.0 --dashboard-port=${RAY_DASHBOARD_PORT} --ray-client-server-port=${RAY_CLIENT_SERVER_PORT} --block
 
     nginx:
         platform: linux/arm64
@@ -198,6 +220,21 @@ services:
         depends_on:
             postgres:
                 condition: service_healthy
+
+    # bring out from airflow compose
+    redis:
+        image: redis:latest
+        expose:
+            - 6379
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 30s
+            retries: 50
+            start_period: 30s
+        restart: always
+        networks:
+            - forecast_network
 
 networks:
     forecast_network:

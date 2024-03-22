@@ -6,7 +6,9 @@ import numpy as np
 import pandas as pd
 import prophet
 from prophet import Prophet
+import redis
 import mlflow
+from datetime import timedelta
 from collections import defaultdict
 from sklearn.metrics import (
     mean_absolute_error,
@@ -21,6 +23,7 @@ from sqlalchemy import create_engine
 from typing import Dict, Tuple
 from plot_utils import plot_forecast, plot_store_data
 from db_utils import get_latest_df_from_db
+from typing import List
 
 SALES_TABLE_NAME = os.getenv("SALES_TABLE_NAME", "rossman_sales")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
@@ -29,15 +32,21 @@ DB_CONNECTION_URL = os.getenv(
     f"postgresql://spark_user:SuperSecurePwdHere@postgres:{POSTGRES_PORT}/spark_pg_db",
 )
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5050")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+RAY_CLIENT_SERVER_PORT = os.getenv("RAY_CLIENT_SERVER_PORT", "10001")
 
 log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
 
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-client = mlflow.MlflowClient(tracking_uri=MLFLOW_TRACKING_URI)
+mlflow_client = mlflow.MlflowClient(tracking_uri=MLFLOW_TRACKING_URI)
+redis_client = redis.Redis(host='redis', port=int(REDIS_PORT), db=1)
+logging.info('Setting up Ray')
+runtime_env = {"working_dir": "./"}
+ray.init(address=f"ray://ray:{RAY_CLIENT_SERVER_PORT}", runtime_env=runtime_env)
+logging.info('Done Ray setup')
 
 app = FastAPI()
-
 
 def prep_store_data(
     df: pd.DataFrame,
@@ -86,16 +95,31 @@ def calculate_metrics(df_true, df_pred):
     }
     return metrics
 
+# @ray.remote
+# def update_status(task_id: str, status: str):
+#     redis_ray = redis.Redis(host='redis', port=int(REDIS_PORT), db=1)
+#     redis_ray.set(task_id, status)
+
+@ray.remote
+def wait_and_update(result_obj_refs: List[ray.ObjectRef], task_id):
+    # ready_id, notready_ids = ray.wait(result_refs, timeout=None)  # Wait indefinitely
+    result_obj = ray.get(result_obj_refs)
+    redis_ray = redis.Redis(host='redis', port=int(REDIS_PORT), db=1)
+    redis_ray.set(task_id, "completed")
 
 @ray.remote(num_returns=2)
 def prep_train_predict(
     df: pd.DataFrame,
     store_id: int,
     product_name: str,
+    train_task_id: str,
     store_open: int = 1,
     seasonality: dict = {"yearly": True, "weekly": True, "daily": False},
 ) -> Tuple[pd.DataFrame, Dict[str, float]]:
-
+    
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    # redis_ray = redis.Redis(host='redis', port=int(REDIS_PORT), db=1)
+    # redis_ray.set(train_task_id, "running")
     with mlflow.start_run():
         logging.info("Started MLflow run")
         store_product_df = prep_store_data(
@@ -156,18 +180,20 @@ def prep_train_predict(
     logging.info("Registered model")
 
     # transition model to production
-    client.transition_model_version_stage(
+    mlflow_client.transition_model_version_stage(
         name=model_name,
         version=model_details.version,
         stage="production",
     )
     logging.info("Transitioned model to production stage")
+    # redis_ray.set(train_task_id, 'completed')
 
     return store_product_df, avg_metrics
 
 
 @app.post("/train", status_code=200)
-def train(request: Request):
+async def train(request: Request):
+    train_task_id = 'train_'+str(time.time())
     # retrieve latest 4 months data from db
     logging.info("Retrieving 4 months data from db...")
     df = get_latest_df_from_db(
@@ -184,11 +210,8 @@ def train(request: Request):
 
     # define params for modelling
     seasonality = {"yearly": True, "weekly": True, "daily": False}
-
-    ray.init(num_cpus=4, dashboard_host="0.0.0.0")
     df_id = ray.put(df)
-
-    start_time = time.time()
+    logging.info('Done putting DF')
 
     train_obj_refs, metrics_obj_refs = map(
         list,
@@ -196,7 +219,7 @@ def train(request: Request):
             *(
                 [
                     prep_train_predict.remote(
-                        df_id, store_id, product_name, seasonality=seasonality
+                        df_id, store_id, product_name, train_task_id=train_task_id, seasonality=seasonality
                     )
                     for store_id in store_ids
                     for product_name in product_names
@@ -204,28 +227,22 @@ def train(request: Request):
             )
         ),
     )
-    # in fact we don't really need to return objects and .get() in this case
-    # cuz everything we want saved to MLflow. but since we don't have a Ray cluster setup
-    # it will be created and shutdown on the execution of this script and if we don't
-    # call .get() ray won't wait til the tasks are done it will just submit the task
-    # to the cluster and return ref objs immediately
-    results = {
-        "train_data": ray.get(train_obj_refs),
-        "metrics": ray.get(metrics_obj_refs),
-    }
-    train_time = time.time() - start_time
 
-    ray.shutdown()
-    logging.info(f"Models trained {len(store_ids)*len(product_names)}")
-    logging.info(f"Took {train_time:.4f} seconds")
+    # Mark status as running initially
+    redis_client.set(train_task_id, "running") 
+    # Fire off the status update task
+    wait_and_update.remote(train_obj_refs, train_task_id)
+
+    logging.info(f"Submitted model training for {len(store_ids)*len(product_names)} models")
     return {
-        "message": "Successfully trained models",
-        "n_trained_models": len(store_ids) * len(product_names),
+        "train_task_id": train_task_id,
+        "status": "submitted",
     }
 
 
 @app.post("/{store_id}/{product_name}/train", status_code=200)
-def train_one(request: Request, store_id: int, product_name: str):
+async def train_one(store_id: int, product_name: str):
+    train_task_id = 'train_'+str(time.time())
     # retrieve latest 4 months data from db
     logging.info("Retrieving 4 months data from db...")
     df = get_latest_df_from_db(
@@ -247,25 +264,38 @@ def train_one(request: Request, store_id: int, product_name: str):
     # define params for modelling
     seasonality = {"yearly": True, "weekly": True, "daily": False}
 
-    ray.init(num_cpus=1, dashboard_host="0.0.0.0")
     df_id = ray.put(df)
 
     start_time = time.time()
 
     train_obj_ref, metrics_obj_ref = prep_train_predict.remote(
-        df_id, store_id, product_name, seasonality=seasonality
+        df_id, store_id, product_name, train_task_id=train_task_id, seasonality=seasonality
     )
+
     results = {
         "train_data": ray.get(train_obj_ref),
         "metrics": ray.get(metrics_obj_ref),
     }
     train_time = time.time() - start_time
 
-    ray.shutdown()
-    logging.info(f"Models trained for store: {store_id} | Product: {product_name}")
+    logging.info(f"Trained a model for store: {store_id} | Product: {product_name}")
     logging.info(f"Took {train_time:.4f} seconds")
     return {
         "message": "Successfully trained a new model",
+        "train_task_id": train_task_id,
+        "status": "completed",
         "store_id": store_id,
         "product_name": product_name,
     }
+
+@app.get("/training_task_status/{train_task_id}")
+async def training_task_status(train_task_id: str):
+    status = redis_client.get(train_task_id)
+    if status:
+        if status == b"completed":  # Redis returns byte values
+            redis_client.expire(train_task_id, timedelta(hours=1))  # Cleanup after retrieving result
+            return {"train_task_id": train_task_id, "status": "completed"}
+        else:
+            return {"train_task_id": train_task_id, "status": status.decode('utf-8')} 
+    else:
+        return {"train_task_id": train_task_id, "error": "Task not found"}
