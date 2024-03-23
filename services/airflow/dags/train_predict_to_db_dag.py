@@ -15,17 +15,18 @@ with DAG(
         "retries": 1,
         "retry_delay": timedelta(minutes=10),
     },
-    description="Weekly train models with latest data including the previous week " + \
-                "and make next week's forecast",
+    description="Weekly train models with latest data including the previous week "
+    + "and make next week's forecast",
     schedule_interval=timedelta(weeks=1),  # run weekly
     start_date=datetime.now(),
     catchup=False,
     tags=["retrain", "batch_prediction", "postgres"],
 ) as dag:
-    
+
     # POST to the training service
     kafka_spark_to_db_task = BashOperator(
-        task_id="call_train_service", bash_command="curl -X POST http://nginx/api/trainers/train"
+        task_id="call_train_service",
+        bash_command="curl -X POST http://nginx/api/trainers/train",
     )
 
     # if we use Dask, need a way to keep checking when the training is done then can proceed

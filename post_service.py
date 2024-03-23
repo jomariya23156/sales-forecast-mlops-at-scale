@@ -2,21 +2,20 @@ import time
 import requests
 from pprint import pprint
 
-def watch_task_status(endpoint, interval=10):
-    while True:
+
+def wait_until_status(
+    endpoint, status_to_wait_for, poll_interval=5, timeout_seconds=30
+):
+    start = time.time()
+    while time.time() - start <= timeout_seconds:
         resp = requests.get(endpoint)
         resp = resp.json()
-        train_task_id, status = resp['train_task_id'], resp['status']
-
-        if status == "completed":
-            print(f"task id: {train_task_id} | status: {status}")
-            # Do something with the result 
-            print("Training task completed!")
+        train_job_id, status = resp["train_job_id"], resp["status"]
+        print(f"status: {status}")
+        if str(status) in status_to_wait_for:
             break
+        time.sleep(poll_interval)
 
-        else:
-            print(f"task id: {train_task_id} | status: {status}")
-            time.sleep(interval)  # Check status periodically
 
 body = [
     {
@@ -43,15 +42,18 @@ body = [
 # resp = requests.post("http://localhost:4243/train", json=body)
 
 # reverse proxy test (nginx)
-resp = requests.post("http://localhost/api/trainers/train", json=body)
-# resp = requests.post("http://localhost/api/trainers/1000/product_A/train", json=body)
+# resp = requests.post("http://localhost/api/trainers/train", json=body)
+resp = requests.post("http://localhost/api/trainers/1000/product_A/train", json=body)
 # resp = requests.post("http://localhost/api/forecasters/forecast", json=body)
 print(resp.raw)
 resp_json = resp.json()
 pprint(resp_json, indent=4)
-time.sleep(5) # delay a bit
 
-print('Watching training task status...')
-watch_task_status(f"http://localhost/api/trainers/training_task_status/{resp_json['train_task_id']}")
-
-# watch_task_status(f"http://localhost/api/trainers/training_task_status/train_1711118459.4240654")
+print("Watching training task status...")
+status_to_wait_for = {"SUCCEEDED", "STOPPED", "FAILED"}
+wait_until_status(
+    endpoint=f"http://localhost/api/trainers/training_job_status/{resp_json['train_job_id']}",
+    status_to_wait_for=status_to_wait_for,
+    poll_interval=5,
+    timeout_seconds=60 * 30,  # 30 mins
+)

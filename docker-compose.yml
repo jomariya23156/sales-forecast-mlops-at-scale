@@ -69,8 +69,6 @@ services:
             - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
         networks:
             - forecast_network
-        # ports:
-        #     - ${FORECAST_SERVICE_PORT}:${FORECAST_SERVICE_PORT}
         volumes:
             - mlflow_data:${MLFLOW_ARTIFACT_ROOT}:ro
 
@@ -89,8 +87,6 @@ services:
             - FORECAST_ENDPOINT_URI=http://nginx/api/forecasters/forecast
         networks:
             - forecast_network
-        # ports:
-        #     - ${WEB_UI_PORT}:${WEB_UI_PORT}
         volumes:
             - /Users/ariyasontrapornpol/Desktop/personal_projects/dev_workspace/dev_repos/sales-forecast-mlops-at-scale/services/web_ui/app/main.py:/service/app/main.py
 
@@ -107,15 +103,13 @@ services:
         env_file:
             - .env
         environment:
-            # - RAY_ADDRESS=ray://ray:${RAY_HEAD_PORT}
             - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
             - DB_CONNECTION_URL=postgresql://spark_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/spark_pg_db
         networks:
             - forecast_network
         depends_on:
-            - ray
-        # ports:
-        #     - ${TRAINING_SERVICE_PORT}:${TRAINING_SERVICE_PORT}
+            ray:
+                condition: service_healthy
         volumes:
             - ./services/training_service/app/:/service/app/
             - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
@@ -136,9 +130,12 @@ services:
         networks:
             - forecast_network
         ports:
-            - ${RAY_DASHBOARD_PORT}:${RAY_DASHBOARD_PORT} # port for ray dashboard
-        # command: sleep infinity
-        # command: ray start --head --port=${RAY_HEAD_PORT} --dashboard-host=0.0.0.0 --dashboard-port=${RAY_DASHBOARD_PORT} --ray-client-server-port=${RAY_CLIENT_SERVER_PORT} --block
+            - ${RAY_DASHBOARD_PORT}:${RAY_DASHBOARD_PORT}
+        healthcheck:
+            test: ["CMD-SHELL", "ray status"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
 
     nginx:
         platform: linux/arm64
