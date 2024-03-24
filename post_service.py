@@ -19,19 +19,19 @@ def wait_until_status(
 
 body = [
     {
-        "store_id": "4",
+        "store_id": "1",
+        "product_name": "product_A",
+        "begin_date": "2023-03-01T00:00:00Z",
+        "end_date": "2023-03-07T00:00:00Z",
+    },
+    {
+        "store_id": "2",
         "product_name": "product_A",
         "begin_date": "2023-03-01T00:00:00Z",
         "end_date": "2023-03-07T00:00:00Z",
     },
     {
         "store_id": "3",
-        "product_name": "product_A",
-        "begin_date": "2023-03-01T00:00:00Z",
-        "end_date": "2023-03-07T00:00:00Z",
-    },
-    {
-        "store_id": "10",
         "product_name": "product_A",
         "begin_date": "2023-03-01T00:00:00Z",
         "end_date": "2023-03-07T00:00:00Z",
@@ -43,17 +43,17 @@ body = [
 
 # reverse proxy test (nginx)
 # resp = requests.post("http://localhost/api/trainers/train", json=body)
-resp = requests.post("http://localhost/api/trainers/1000/product_A/train", json=body)
-# resp = requests.post("http://localhost/api/forecasters/forecast", json=body)
+# resp = requests.post("http://localhost/api/trainers/1000/product_A/train", json=body)
+resp = requests.post("http://localhost/api/forecasters/forecast", json=body)
 print(resp.raw)
 resp_json = resp.json()
 pprint(resp_json, indent=4)
 
-print("Watching training task status...")
-status_to_wait_for = {"SUCCEEDED", "STOPPED", "FAILED"}
-wait_until_status(
-    endpoint=f"http://localhost/api/trainers/training_job_status/{resp_json['train_job_id']}",
-    status_to_wait_for=status_to_wait_for,
-    poll_interval=5,
-    timeout_seconds=60 * 30,  # 30 mins
-)
+# print("Watching training task status...")
+# status_to_wait_for = {"SUCCEEDED", "STOPPED", "FAILED"}
+# wait_until_status(
+#     endpoint=f"http://localhost/api/trainers/training_job_status/{resp_json['train_job_id']}",
+#     status_to_wait_for=status_to_wait_for,
+#     poll_interval=5,
+#     timeout_seconds=60 * 30,  # 30 mins
+# )

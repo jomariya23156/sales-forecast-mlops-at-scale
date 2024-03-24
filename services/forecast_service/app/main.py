@@ -1,3 +1,4 @@
+import time
 import datetime
 import contextlib
 import pandas as pd
@@ -20,7 +21,7 @@ models = {}
 MODEL_BASE_NAME = f"prophet-retail-forecaster-store"
 
 
-async def get_model(store_id: str, product_name: str):
+def get_model(store_id: str, product_name: str):
     global models
     model_name = f"{MODEL_BASE_NAME}-{store_id}-{product_name}"
     if model_name not in models:
@@ -67,8 +68,10 @@ async def health_check():
     }
 
 
+# for long running task (1,000 entries), it seems like async
+# cannot handle it and cause uvicorn worker timeout, so use only def here
 @app.post("/forecast", status_code=200)
-async def forecast(forecast_request: List[ForecastRequest]):
+def forecast(forecast_request: List[ForecastRequest]):
     """
     Main route in the app for returning the forecast, steps are:
 
@@ -79,12 +82,14 @@ async def forecast(forecast_request: List[ForecastRequest]):
     5. append to return object
     6. return
     """
+    start = time.time()
     forecasts = []
     for item in forecast_request:
-        model = await get_model(item.store_id, item.product_name)
         logging.info(
-            f"Got the model for store: {item.store_id} | product: {item.product_name}"
+            f"Getting the model for store: {item.store_id} | product: {item.product_name}"
         )
+        model, model_name, model_version = get_model(item.store_id, item.product_name)
+        logging.info(f"Got the model")
         forecast_input = create_forecast_index(
             begin_date=item.begin_date, end_date=item.end_date
         )
@@ -94,5 +99,12 @@ async def forecast(forecast_request: List[ForecastRequest]):
         model_pred = model_pred.rename(columns={"ds": "timestamp", "yhat": "value"})
         model_pred["value"] = model_pred["value"].astype(int)
         forecast_result["forecast"] = model_pred.to_dict("records")
+        forecast_result["api"] = {
+            "model_name": model_name,
+            "model_version": model_version,
+        }
         forecasts.append(forecast_result)
+    logging.info(
+        f"Making predictions for {len(forecast_request)} entries took {time.time() - start:.4f} s"
+    )
     return forecasts

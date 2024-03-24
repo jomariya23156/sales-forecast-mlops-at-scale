@@ -14,6 +14,13 @@ Modification made:
 - Note when starting: need to specify both compose files i.e. `docker-compose -f docker-compose.yml -f docker-compose-airflow.yml`
 From doc: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html
 
+## Service port:
+MLflow: 5050
+Airflow: 8080
+Ray Dashboard: 8265
+Redis: 6379
+Nginx: 80
+
 ### Note on Stream processing options
 There are a few options we can do to consume the stream data from Kafka producer and save to Postgres
 1. Dead and simple consumer with SQLAlchemy
@@ -57,4 +64,6 @@ In fact, you can submit the training jobs directly from **ANY** service in the s
 - Easier to maintain: Following the previous point, it makes your life a lot harder to maintain the services. For example, without FastAPI middle man, if you need to update the logic for training, you have to update both Streamlit and Airflow.
 - Offer more flexibility and customizability: With my approach, you can add as many extra steps as you like to handle and process incoming Ray job submission from client. For example, you can include more an authentication step for security purpose.
 
-From time-to-time during the development, I found that the Ray cluster do not accept the Job submission and show error `Job supervisor actor could not be scheduled: The actor is not schedulable: The node specified via NodeAffinitySchedulingStrategy doesn't exist any more or is infeasible, and soft=False was specified.`. I fixed that by removing all data in redis by running `docker-compose exec redis redis-cli FLUSHALL` AND/OR removing Ray container and rebuild it again. Hope this helps if you face the same issue!
+
+### Using Ray with external Redis
+If we restart the Ray container, all previous job history will be gone because Ray store them in-memory only. We can add an external Redis to manage these variables but, from using, this seems very very unstable, this is also stated in the official doc that using external Redis supports only on-cloud / Kubernetes. But I wanna try and... from time-to-time during the development, I found that the Ray cluster do not accept the Job submission and show error `Job supervisor actor could not be scheduled: The actor is not schedulable: The node specified via NodeAffinitySchedulingStrategy doesn't exist any more or is infeasible, and soft=False was specified.`. I could fix that by removing all data in redis by running `docker-compose exec redis redis-cli FLUSHALL` AND/OR removing Ray container and rebuild it again. But it's annoying and time consuming. So in the end, I got rid of external Redis for Ray, Bye~.

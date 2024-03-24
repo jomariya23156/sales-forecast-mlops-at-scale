@@ -9,4 +9,4 @@ RUN apt-get update && apt-get install -y default-jre-headless
 USER airflow
 
 # Install Spark dependencies
-RUN pip install pyspark==3.5.1 SQLAlchemy==1.4.49
+RUN pip install pyspark==3.5.1 SQLAlchemy==1.4.49 numpy==1.25.2 pandas==1.4.2 

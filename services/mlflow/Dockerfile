@@ -8,6 +8,7 @@ RUN pip install -r requirements.txt
 
 EXPOSE $MLFLOW_PORT
 
+# MLFLOW_ARTIFACT_ROOT must be mounted/accessible for all mlflow server and clients
 CMD mlflow server \
     --host 0.0.0.0 --port ${MLFLOW_PORT} \
     --backend-store-uri ${BACKEND_STORE_URI} \

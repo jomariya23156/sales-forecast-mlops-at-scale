@@ -31,7 +31,6 @@ services:
             - "${JUPYTER_PORT}:${JUPYTER_PORT}"
         volumes:
             - ./:/home/${JUPYTER_USER}/workspace/
-            - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
             - conda_data:/opt/anaconda3
 
     kafka:
@@ -70,7 +69,7 @@ services:
         networks:
             - forecast_network
         volumes:
-            - mlflow_data:${MLFLOW_ARTIFACT_ROOT}:ro
+            - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
 
     # Web UI interface
     web_ui:
@@ -125,8 +124,8 @@ services:
         shm_size: '2gb'
         env_file:
             - .env
-        environment:
-            - RAY_REDIS_ADDRESS=redis:${REDIS_PORT}
+        # environment:
+        #     - RAY_REDIS_ADDRESS=redis-ray:${REDIS_PORT}
         networks:
             - forecast_network
         ports:
@@ -135,7 +134,24 @@ services:
             test: ["CMD-SHELL", "ray status"]
             interval: 5s
             timeout: 5s
-            retries: 5
+            retries: 10
+        volumes:
+            - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
+
+    # dedicated redis for ray
+    redis-ray:
+        image: redis:latest
+        expose:
+            - 6379
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 30s
+            retries: 50
+            start_period: 30s
+        restart: always
+        networks:
+            - forecast_network
 
     nginx:
         platform: linux/arm64
@@ -174,6 +190,7 @@ services:
         ports:
             - "${MLFLOW_PORT}:${MLFLOW_PORT}"
         volumes:
+            # note: this path must be mounted/accessible for all mlflow server and clients
             - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
         depends_on:
             postgres:
@@ -217,21 +234,6 @@ services:
         depends_on:
             postgres:
                 condition: service_healthy
-
-    # bring out from airflow compose
-    redis:
-        image: redis:latest
-        expose:
-            - 6379
-        healthcheck:
-            test: ["CMD", "redis-cli", "ping"]
-            interval: 10s
-            timeout: 30s
-            retries: 50
-            start_period: 30s
-        restart: always
-        networks:
-            - forecast_network
 
 networks:
     forecast_network:

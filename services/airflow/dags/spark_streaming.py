@@ -11,6 +11,7 @@ from pyspark.sql.types import StructType, StructField, StringType, IntegerType, 
 from pyspark.sql.functions import from_json, col
 from db_utils import prepare_db
 
+SALES_TABLE_NAME = os.getenv("SALES_TABLE_NAME", "rossman_sales")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
 POSTGRES_CONNECTION_URL = os.getenv(
     "POSTGRES_CONNECTION_URL", f"jdbc:postgresql://postgres:{POSTGRES_PORT}/spark_pg_db"
@@ -79,7 +80,7 @@ def write_df_to_db(processed_df):
             lambda batch_df, batch_id: (
                 batch_df.write.jdbc(
                     POSTGRES_CONNECTION_URL,
-                    "rossman_sales",
+                    SALES_TABLE_NAME,
                     "append",
                     properties=POSTGRES_PROPERTIES,
                 )

@@ -1,7 +1,6 @@
 FROM python:3.9.17-slim
 
 ARG TRAINING_SERVICE_PORT=$TRAINING_SERVICE_PORT
-ARG MLFLOW_ARTIFACT_ROOT=$MLFLOW_ARTIFACT_ROOT
 
 # there is a pip package required psutil which requires gcc included in build-essential here
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -10,10 +9,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-# Config path dir and permission for mlflow artifacts storage
-# mlflow stores artifacts on client's container
-RUN mkdir -p $MLFLOW_ARTIFACT_ROOT
 
 COPY requirements.txt /service/requirements.txt
 
