@@ -116,11 +116,12 @@ def save_forecasts_to_db(**kwargs):  # New function for task
             forecast_date = datetime.strptime(
                 forecast["timestamp"], "%Y-%m-%dT%H:%M:%S"
             )
-            forecast_sale = forecast["value"]
             data["store"].append(request["store_id"])
             data["productname"].append(request["product_name"])
             data["forecast_date"].append(forecast_date)
-            data["forecast_sale"].append(forecast_sale)
+            data["forecast_sale"].append(forecast["value"])
+            data["lower_ci"].append(forecast["lower_ci"])
+            data["upper_ci"].append(forecast["upper_ci"])
             data["model_name"].append(api["model_name"])
             data["model_version"].append(api["model_version"])
             data["created_on"].append(datetime.now())

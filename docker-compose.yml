@@ -87,7 +87,7 @@ services:
         networks:
             - forecast_network
         volumes:
-            - /Users/ariyasontrapornpol/Desktop/personal_projects/dev_workspace/dev_repos/sales-forecast-mlops-at-scale/services/web_ui/app/main.py:/service/app/main.py
+            - /Users/ariyasontrapornpol/Desktop/personal_projects/dev_workspace/dev_repos/sales-forecast-mlops-at-scale/services/web_ui/app/:/service/app/
 
     # service for triggering training/retraining
     training_service:

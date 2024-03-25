@@ -95,9 +95,19 @@ def forecast(forecast_request: List[ForecastRequest]):
         )
         forecast_result = {}
         forecast_result["request"] = item.dict()
-        model_pred = model.predict(forecast_input)[["ds", "yhat"]]
-        model_pred = model_pred.rename(columns={"ds": "timestamp", "yhat": "value"})
-        model_pred["value"] = model_pred["value"].astype(int)
+        model_pred = model.predict(forecast_input)[
+            ["ds", "yhat", "yhat_lower", "yhat_upper"]
+        ]
+        model_pred = model_pred.rename(
+            columns={
+                "ds": "timestamp",
+                "yhat": "value",
+                "yhat_lower": "lower_ci",
+                "yhat_upper": "upper_ci",
+            }
+        )
+        for value_col in ["value", "lower_ci", "upper_ci"]:
+            model_pred[value_col] = model_pred[value_col].astype(int)
         forecast_result["forecast"] = model_pred.to_dict("records")
         forecast_result["api"] = {
             "model_name": model_name,

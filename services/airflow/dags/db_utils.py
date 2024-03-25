@@ -25,6 +25,8 @@ class ForecastResultsTable(Base):
     productname = Column(String)
     forecast_date = Column(DateTime)
     forecast_sale = Column(Integer)
+    lower_ci = Column(Integer)
+    upper_ci = Column(Integer)
     model_name = Column(String)
     model_version = Column(String)
     created_on = Column(DateTime, default=datetime.now)

@@ -49,11 +49,11 @@ print(resp.raw)
 resp_json = resp.json()
 pprint(resp_json, indent=4)
 
-# print("Watching training task status...")
-# status_to_wait_for = {"SUCCEEDED", "STOPPED", "FAILED"}
-# wait_until_status(
-#     endpoint=f"http://localhost/api/trainers/training_job_status/{resp_json['train_job_id']}",
-#     status_to_wait_for=status_to_wait_for,
-#     poll_interval=5,
-#     timeout_seconds=60 * 30,  # 30 mins
-# )
+print("Watching training task status...")
+status_to_wait_for = {"SUCCEEDED", "STOPPED", "FAILED"}
+wait_until_status(
+    endpoint=f"http://localhost/api/trainers/training_job_status/{resp_json['train_job_id']}",
+    status_to_wait_for=status_to_wait_for,
+    poll_interval=5,
+    timeout_seconds=60 * 30,  # 30 mins
+)
