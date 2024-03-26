@@ -1,15 +1,13 @@
 # create a Kafka consumer to consume data from producer
-# and use Kafka connect to save to Postgres
-# (then modify the training service to fetch latest N data rows from Postgres)
-
 import os
 import json
 from kafka import KafkaConsumer
 
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "sale_rossman_store")
+KAFKA_BOOTSTRAP_SERVER = os.getenv("KAFKA_BOOTSTRAP_SERVER", "kafka:9092")
 
 consumer = KafkaConsumer(
-    bootstrap_servers=["kafka:9092"],
+    bootstrap_servers=[KAFKA_BOOTSTRAP_SERVER],
     # auto_offset_reset='earliest',
     value_deserializer=lambda x: json.loads(x.decode("utf-8")),
 )

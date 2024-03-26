@@ -3,6 +3,7 @@ import time
 import pandas as pd
 import altair as alt
 import requests
+import streamlit as st
 from collections import defaultdict
 from sqlalchemy import create_engine
 from datetime import datetime, timedelta

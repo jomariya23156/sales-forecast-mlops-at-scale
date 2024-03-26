@@ -1,0 +1,1 @@
+Nothing important to the main code here. These are just files I was using during the development but they are worth keeping. Most of the code are already applied to the main code across services, so these codes here are maybe outdated but are good resources for learning.

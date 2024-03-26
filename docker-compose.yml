@@ -52,6 +52,23 @@ services:
         volumes:
             - kafka_data:/bitnami/kafka
 
+    # mockup api producer
+    data_producer:
+        platform: linux/arm64
+        build:
+            context: ./services/data_producer
+            dockerfile: Dockerfile
+        env_file:
+            - .env
+        environment:
+            - KAFKA_BOOTSTRAP_SERVER=kafka:9092
+        networks:
+            - forecast_network
+        volumes:
+            - ./services/data_producer/datasets/:/service/datasets/
+        # note: without executable cmd format like this, chaining multiple commands won't work
+        command: ["bash", "-c", "python scripts/put_data_in_postgres.py && python scripts/kafka_producer.py"]
+
     # sales forecasst service
     forecast_service:
         platform: linux/arm64
@@ -124,8 +141,6 @@ services:
         shm_size: '2gb'
         env_file:
             - .env
-        # environment:
-        #     - RAY_REDIS_ADDRESS=redis-ray:${REDIS_PORT}
         networks:
             - forecast_network
         ports:
@@ -137,21 +152,6 @@ services:
             retries: 10
         volumes:
             - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
-
-    # dedicated redis for ray
-    redis-ray:
-        image: redis:latest
-        expose:
-            - 6379
-        healthcheck:
-            test: ["CMD", "redis-cli", "ping"]
-            interval: 10s
-            timeout: 30s
-            retries: 50
-            start_period: 30s
-        restart: always
-        networks:
-            - forecast_network
 
     nginx:
         platform: linux/arm64
