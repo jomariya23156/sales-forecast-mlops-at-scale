@@ -34,6 +34,9 @@ def preprocess_input_df(df: pd.DataFrame) -> pd.DataFrame:
     df = df.sort_values("date", ascending=True).reset_index(drop=True)
     return df
 
+# This is the place where you have to modify the data source to
+# your real use case e.g. api, external source, etc. then send
+# it to kafka topic using producer
 logger.info("Reading a small subset of data for dummy streaming...")
 sale_stream = pd.read_csv("datasets/rossmann-store-sales/train_only_last_10d.csv")
 sale_stream = preprocess_input_df(sale_stream)

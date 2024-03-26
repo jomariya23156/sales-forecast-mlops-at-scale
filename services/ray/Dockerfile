@@ -15,7 +15,10 @@ COPY requirements_addon.txt requirements_addon.txt
 
 RUN pip install -r requirements_addon.txt
 
+# NOTE: if you change RAY_METRICS_EXPORT_PORT, you need to change
+# the port in prometheus.yaml too
 CMD ray start --head --port=${RAY_HEAD_PORT} \
     --dashboard-host=0.0.0.0 \
     --dashboard-port=${RAY_DASHBOARD_PORT} \
-    --ray-client-server-port=${RAY_CLIENT_SERVER_PORT} --block
+    --ray-client-server-port=${RAY_CLIENT_SERVER_PORT} \
+    --metrics-export-port=${RAY_METRICS_EXPORT_PORT} --block
