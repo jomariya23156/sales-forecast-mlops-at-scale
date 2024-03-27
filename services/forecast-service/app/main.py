@@ -14,21 +14,17 @@ from fastapi.middleware.cors import CORSMiddleware
 log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
 
-# consider using in-memory db such as Redis or Memcache
-# in production for reliability and scalability
 handlers = {}
-models = {}
 MODEL_BASE_NAME = f"prophet-retail-forecaster-store"
 
 
 def get_model(store_id: str, product_name: str):
     global models
     model_name = f"{MODEL_BASE_NAME}-{store_id}-{product_name}"
-    if model_name not in models:
-        models[model_name] = handlers["mlflow"].get_production_model(
-            model_name=model_name
-        )
-    return models[model_name]
+    model, model_name, model_version = handlers["mlflow"].get_production_model(
+        model_name=model_name
+    )
+    return model, model_name, model_version
 
 
 async def get_service_handlers():
@@ -89,7 +85,7 @@ def forecast(forecast_request: List[ForecastRequest]):
             f"Getting the model for store: {item.store_id} | product: {item.product_name}"
         )
         model, model_name, model_version = get_model(item.store_id, item.product_name)
-        logging.info(f"Got the model")
+        logging.info(f"Got the model {model_name} version {model_version}")
         forecast_input = create_forecast_index(
             begin_date=item.begin_date, end_date=item.end_date
         )

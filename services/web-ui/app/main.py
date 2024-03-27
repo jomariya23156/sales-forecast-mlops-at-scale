@@ -66,6 +66,7 @@ if __name__ == "__main__":
 
     if st.session_state["valid_store_id"] and st.session_state["valid_product_name"]:
         # query last 7-day predictions from db
+        # NEED TO TAKE CARE OF DUPLICATED DATE OF PREDICTIONS
         engine = create_engine(DB_CONNECTION_URL)
         forecast_table = get_table_from_engine(engine, FORECAST_TABLE_NAME)
         session = open_db_session(engine)
@@ -123,13 +124,13 @@ if __name__ == "__main__":
 
         ### Forecasting ###
         st.write("Make a forecast for the next days using the latest model")
-        n_days = st.number_input("Number of next days to forecast", min_value=0)
+        n_days = st.number_input("Number of next days to forecast", min_value=1)
         if st.button("Forecast") and n_days:
             with st.status("Forecasting..", expanded=True) as status:
                 req_body = build_forecast_request_body(
                     input_store_id, input_product_name, n_days
                 )
-                st.write("POSTing to the training service...", FORECAST_ENDPOINT_URL)
+                st.write("POSTing to the forecast service...", FORECAST_ENDPOINT_URL)
                 resp = requests.post(FORECAST_ENDPOINT_URL, json=req_body)
                 st.success("Success posting to the forecast service")
                 st.json(resp.json())

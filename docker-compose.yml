@@ -6,7 +6,7 @@ services:
     jupyter:
         # platform: linux/x86_64 # for others (mostly) or can just remove this line
         platform: linux/arm64 # for Mac M1
-        container_name: jupyter_dev_repo
+        container_name: jupyter-dev-repo
         shm_size: '2gb'
         build:
             context: ./services/jupyter
@@ -26,12 +26,12 @@ services:
         environment:
             - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
         networks:
-            - forecast_network
+            - forecast-network
         ports: 
             - "${JUPYTER_PORT}:${JUPYTER_PORT}"
         volumes:
             - ./:/home/${JUPYTER_USER}/workspace/
-            - conda_data:/opt/anaconda3
+            - conda-data:/opt/anaconda3
 
     kafka:
         platform: linux/arm64
@@ -40,7 +40,7 @@ services:
         ports:
             - 9094:9094
         networks:
-            - forecast_network
+            - forecast-network
         environment:
             - KAFKA_CFG_NODE_ID=0
             - KAFKA_CFG_PROCESS_ROLES=controller,broker
@@ -50,32 +50,56 @@ services:
             - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
             - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
         volumes:
-            - kafka_data:/bitnami/kafka
+            - kafka-data:/bitnami/kafka
+        healthcheck:  # Add your chosen method below 
+            test: ["CMD-SHELL", "kafka-topics.sh --delete --if-exists --bootstrap-server localhost:9092 --topic healthcheck && kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic healthcheck || exit 1"]
+            interval: 10s
+            timeout: 10s
+            retries: 10
+
+    kafka-ui:
+        platform: linux/arm64
+        container_name: kafka-ui
+        image: provectuslabs/kafka-ui:latest
+        ports:
+            - ${KAFKA_UI_PORT}:8080  
+        depends_on:
+            - kafka
+        environment:
+            KAFKA_CLUSTERS_0_NAME: local
+            KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: PLAINTEXT://kafka:9092
+            DYNAMIC_CONFIG_ENABLED: 'true'
+        networks:
+            - forecast-network
 
     # mockup api producer
-    data_producer:
+    data-producer:
         platform: linux/arm64
+        container_name: data-producer
         build:
-            context: ./services/data_producer
+            context: ./services/data-producer
             dockerfile: Dockerfile
         env_file:
             - .env
         environment:
             - KAFKA_BOOTSTRAP_SERVER=kafka:9092
         networks:
-            - forecast_network
+            - forecast-network
         volumes:
-            - ./services/data_producer/datasets/:/service/datasets/
+            - ./services/data-producer/datasets/:/service/datasets/
+        depends_on:
+            kafka:
+                condition: service_healthy
         # note: without executable cmd format like this, chaining multiple commands won't work
         command: ["bash", "-c", "python scripts/put_data_in_postgres.py && python scripts/kafka_producer.py"]
 
     # sales forecasst service
-    forecast_service:
+    forecast-service:
         platform: linux/arm64
         image: ariya23156/sale-forecast-service:latest
-        container_name: forecast_service
+        container_name: forecast-service
         build:
-            context: ./services/forecast_service
+            context: ./services/forecast-service
             dockerfile: Dockerfile
             args:
                 FORECAST_SERVICE_PORT: ${FORECAST_SERVICE_PORT}
@@ -84,16 +108,16 @@ services:
         environment:
             - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
         networks:
-            - forecast_network
+            - forecast-network
         volumes:
-            - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
+            - mlflow-data:${MLFLOW_ARTIFACT_ROOT}
 
     # Web UI interface
-    web_ui:
+    web-ui:
         platform: linux/arm64
-        container_name: web_ui
+        container_name: web-ui
         build:
-            context: ./services/web_ui
+            context: ./services/web-ui
             dockerfile: Dockerfile
             args:
                 WEB_UI_PORT: ${WEB_UI_PORT}
@@ -102,16 +126,16 @@ services:
         environment:
             - FORECAST_ENDPOINT_URI=http://nginx/api/forecasters/forecast
         networks:
-            - forecast_network
+            - forecast-network
         volumes:
-            - /Users/ariyasontrapornpol/Desktop/personal_projects/dev_workspace/dev_repos/sales-forecast-mlops-at-scale/services/web_ui/app/:/service/app/
+            - ./services/web-ui/app/:/service/app/
 
     # service for triggering training/retraining
-    training_service:
+    training-service:
         platform: linux/arm64
-        container_name: training_service
+        container_name: training-service
         build:
-            context: ./services/training_service
+            context: ./services/training-service
             dockerfile: Dockerfile
             args:
                 FORECAST_SERVICE_PORT: ${TRAINING_SERVICE_PORT}
@@ -122,16 +146,17 @@ services:
             - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
             - DB_CONNECTION_URL=postgresql://spark_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/spark_pg_db
         networks:
-            - forecast_network
+            - forecast-network
         depends_on:
             ray:
                 condition: service_healthy
         volumes:
-            - ./services/training_service/app/:/service/app/
-            - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
+            - ./services/training-service/app/:/service/app/
+            - mlflow-data:${MLFLOW_ARTIFACT_ROOT}
 
     ray:
         platform: linux/arm64
+        container_name: ray-head
         image: rayproject/ray:2.9.3-py39-cpu-aarch64
         build:
             context: ./services/ray
@@ -149,17 +174,17 @@ services:
             - RAY_PROMETHEUS_NAME=Prometheus
             - RAY_GRAFANA_IFRAME_HOST=http://localhost:${GRAFANA_PORT}
         networks:
-            - forecast_network
-            - backend_network
+            - forecast-network
+            - backend-network
         ports:
             - ${RAY_DASHBOARD_PORT}:${RAY_DASHBOARD_PORT}
         healthcheck:
             test: ["CMD-SHELL", "ray status"]
-            interval: 5s
-            timeout: 5s
+            interval: 10s
+            timeout: 10s
             retries: 10
         volumes:
-            - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
+            - mlflow-data:${MLFLOW_ARTIFACT_ROOT}
 
     nginx:
         platform: linux/arm64
@@ -171,18 +196,18 @@ services:
         env_file:
             - .env
         networks:
-            - forecast_network
+            - forecast-network
         ports:
             - ${NGINX_PORT}:${NGINX_PORT}
         depends_on:
-            - forecast_service
-            - web_ui
-            - training_service
+            - forecast-service
+            - web-ui
+            - training-service
 
     # ML platform / experiment tracking
     mlflow:
         platform: linux/arm64
-        container_name: mlflow_server
+        container_name: mlflow-server
         # restart: always
         build:
             context: ./services/mlflow
@@ -194,12 +219,12 @@ services:
         environment:
             - BACKEND_STORE_URI=postgresql://mlflow_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/mlflow_pg_db
         networks:
-            - forecast_network
+            - forecast-network
         ports:
             - "${MLFLOW_PORT}:${MLFLOW_PORT}"
         volumes:
             # note: this path must be mounted/accessible for all mlflow server and clients
-            - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
+            - mlflow-data:${MLFLOW_ARTIFACT_ROOT}
         depends_on:
             postgres:
                 condition: service_healthy
@@ -207,7 +232,7 @@ services:
     # sql database
     postgres:
         platform: linux/arm64
-        container_name: postgres_server
+        container_name: postgres-server
         image: postgres:15.3
         # restart: always
         environment:
@@ -215,7 +240,7 @@ services:
             - POSTGRES_PASSWORD=postgres
             - POSTGRES_DB=postgres
         networks:
-            - forecast_network
+            - forecast-network
         volumes:
             - ./services/postgres/docker_postgres_init.sql:/docker-entrypoint-initdb.d/docker_postgres_init.sql
             - pgdata:/var/lib/postgresql/data
@@ -234,11 +259,11 @@ services:
             - PGADMIN_DEFAULT_EMAIL=pgadmin@gmail.com
             - PGADMIN_DEFAULT_PASSWORD=SuperSecurePwdHere
         networks:
-            - forecast_network
+            - forecast-network
         ports:
             - "16543:80"
         volumes:
-            - pgadmin_data:/var/lib/pgadmin
+            - pgadmin-data:/var/lib/pgadmin
         depends_on:
             postgres:
                 condition: service_healthy
@@ -250,7 +275,7 @@ services:
         container_name: grafana
         restart: unless-stopped
         networks:
-            - backend_network
+            - backend-network
         ports:
             - "${GRAFANA_PORT}:3000"
         volumes:
@@ -258,7 +283,7 @@ services:
             - ./services/grafana/grafana_dashboards.yml:/etc/grafana/provisioning/dashboards/grafana_dashboards.yml:ro
             - ./services/grafana/dashboards:/opt/grafana/dashboards
             - ./services/grafana/grafana.ini:/etc/grafana/grafana.ini
-            - grafana_data:/var/lib/grafana
+            - grafana-data:/var/lib/grafana
         depends_on:
             - prometheus
 
@@ -269,23 +294,23 @@ services:
         container_name: prometheus
         restart: unless-stopped
         networks:
-            - backend_network
+            - backend-network
         ports:
             - "${PROMETHEUS_PORT}:9090"
         volumes:
             - ./services/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
-            - prometheus_data:/prometheus
+            - prometheus-data:/prometheus
         command: "--config.file=/etc/prometheus/prometheus.yaml"
     
     # host machine's metrics exporter for prometheus
-    node_exporter:
+    node-exporter:
         platform: linux/arm64
         image: quay.io/prometheus/node-exporter:v1.5.0
-        container_name: node_exporter
+        container_name: node-exporter
         restart: unless-stopped
         pid: host
         networks:
-            - backend_network
+            - backend-network
         volumes: 
             - /:/host:ro,rslave
         command: "--path.rootfs=/host"
@@ -296,7 +321,7 @@ services:
         container_name: cadvisor
         restart: unless-stopped
         networks:
-            - backend_network
+            - backend-network
         ports:
             - "${CADVISOR_PORT}:8080"
         volumes:
@@ -312,18 +337,18 @@ services:
         privileged: true
 
 networks:
-    forecast_network:
+    forecast-network:
         driver: "bridge"
-    backend_network:
+    backend-network:
         driver: "bridge"
 
 volumes:
-    mlflow_data:
+    mlflow-data:
     pgdata:
-    pgadmin_data:
-    kafka_data:
-    prometheus_data:
-    grafana_data:
+    pgadmin-data:
+    kafka-data:
+    prometheus-data:
+    grafana-data:
     # for dev
-    conda_data:
+    conda-data:
     
