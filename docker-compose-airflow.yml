@@ -53,7 +53,7 @@ x-airflow-common:
   image: ariya23156/custom-airflow-spark:latest
   # build: .
   networks:
-    - forecast_network
+    - forecast-network
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -103,7 +103,7 @@ services:
       start_period: 30s
     restart: always
     networks:
-      - forecast_network
+      - forecast-network
 
   airflow-webserver:
     <<: *airflow-common

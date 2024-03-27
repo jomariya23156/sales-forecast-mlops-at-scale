@@ -66,6 +66,7 @@ if __name__ == "__main__":
 
     if st.session_state["valid_store_id"] and st.session_state["valid_product_name"]:
         # query last 7-day predictions from db
+        # NEED TO TAKE CARE OF DUPLICATED DATE OF PREDICTIONS
         engine = create_engine(DB_CONNECTION_URL)
         forecast_table = get_table_from_engine(engine, FORECAST_TABLE_NAME)
         session = open_db_session(engine)
