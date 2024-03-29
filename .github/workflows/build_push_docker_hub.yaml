@@ -1,0 +1,51 @@
+# https://docs.github.com/en/actions/publishing-packages/publishing-docker-images
+name: Publish Docker image
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata (tags, labels) for Web UI Docker
+        id: meta_web_ui
+        uses: docker/metadata-action@v3
+        with:
+          images: ariya23156/sfmlops-web-ui
+
+      - name: Build and push Web UI Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: ./services/web-ui
+          file: ./services/web-ui/Dockerfile
+          push: true
+          tags: latest
+          labels: ${{ steps.meta_web_ui.outputs.labels }}
+
+      - name: Extract metadata (tags, labels) for Training Service Docker
+        id: meta_web_ui
+        uses: docker/metadata-action@v3
+        with:
+          images: ariya23156/sfmlops-training-service
+
+      - name: Build and push Training Service Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: ./services/training-service
+          file: ./services/training-service/Dockerfile
+          push: true
+          tags: latest
+          labels: ${{ steps.meta_web_ui.outputs.labels }}

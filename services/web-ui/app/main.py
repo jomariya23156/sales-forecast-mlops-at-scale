@@ -17,6 +17,7 @@ from common_utils import (
     df_from_forecast_response,
 )
 
+NGINX_HOST_NAME = os.getenv("NGINX_HOST_NAME", "nginx")
 FORECAST_ENDPOINT_URL = os.getenv(
     "FORECAST_ENDPOINT_URL", f"http://nginx/api/forecasters/forecast"
 )
@@ -66,7 +67,6 @@ if __name__ == "__main__":
 
     if st.session_state["valid_store_id"] and st.session_state["valid_product_name"]:
         # query last 7-day predictions from db
-        # NEED TO TAKE CARE OF DUPLICATED DATE OF PREDICTIONS
         engine = create_engine(DB_CONNECTION_URL)
         forecast_table = get_table_from_engine(engine, FORECAST_TABLE_NAME)
         session = open_db_session(engine)
@@ -101,14 +101,14 @@ if __name__ == "__main__":
                     f"Store ID: {input_store_id} | Product name: {input_product_name}"
                 )
                 resp = requests.post(
-                    f"http://nginx/api/trainers/{input_store_id}/{input_product_name}/train"
+                    f"http://{NGINX_HOST_NAME}/api/trainers/{input_store_id}/{input_product_name}/train"
                 )
                 resp_json = resp.json()
                 st.json(resp_json)
                 st.write("Watching training task status...")
                 status_to_wait_for = {"SUCCEEDED", "STOPPED", "FAILED"}
                 exit_status = wait_until_status(
-                    endpoint=f"http://nginx/api/trainers/training_job_status/{resp_json['train_job_id']}",
+                    endpoint=f"http://{NGINX_HOST_NAME}/api/trainers/training_job_status/{resp_json['train_job_id']}",
                     status_to_wait_for=status_to_wait_for,
                     poll_interval=1,
                     timeout_seconds=30,  # 30 seconds

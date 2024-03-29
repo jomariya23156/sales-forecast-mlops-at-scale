@@ -27,7 +27,7 @@ services:
             - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
         networks:
             - forecast-network
-        ports: 
+        ports:
             - "${JUPYTER_PORT}:${JUPYTER_PORT}"
         volumes:
             - ./:/home/${JUPYTER_USER}/workspace/
@@ -51,7 +51,7 @@ services:
             - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
         volumes:
             - kafka-data:/bitnami/kafka
-        healthcheck:  # Add your chosen method below 
+        healthcheck:  # Add your chosen method below
             test: ["CMD-SHELL", "kafka-topics.sh --delete --if-exists --bootstrap-server localhost:9092 --topic healthcheck && kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic healthcheck || exit 1"]
             interval: 10s
             timeout: 10s
@@ -62,7 +62,7 @@ services:
         container_name: kafka-ui
         image: provectuslabs/kafka-ui:latest
         ports:
-            - ${KAFKA_UI_PORT}:8080  
+            - ${KAFKA_UI_PORT}:8080
         depends_on:
             - kafka
         environment:
@@ -124,7 +124,8 @@ services:
         env_file:
             - .env
         environment:
-            - FORECAST_ENDPOINT_URI=http://nginx/api/forecasters/forecast
+            - NGINX_HOST_NAME=nginx
+            - FORECAST_ENDPOINT_URL=http://nginx/api/forecasters/forecast
         networks:
             - forecast-network
         volumes:
@@ -164,7 +165,7 @@ services:
             args:
                 MLFLOW_ARTIFACT_ROOT: ${MLFLOW_ARTIFACT_ROOT}
         shm_size: '2gb'
-        # NOTE: if you change RAY_METRICS_EXPORT_PORT in .env, 
+        # NOTE: if you change RAY_METRICS_EXPORT_PORT in .env,
         # you need to change the port in prometheus.yaml too
         env_file:
             - .env
@@ -249,7 +250,7 @@ services:
             interval: 5s
             timeout: 5s
             retries: 5
-    
+
     # ui for database
     pgadmin:
         platform: linux/arm64
@@ -301,7 +302,7 @@ services:
             - ./services/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
             - prometheus-data:/prometheus
         command: "--config.file=/etc/prometheus/prometheus.yaml"
-    
+
     # host machine's metrics exporter for prometheus
     node-exporter:
         platform: linux/arm64
@@ -311,13 +312,13 @@ services:
         pid: host
         networks:
             - backend-network
-        volumes: 
+        volumes:
             - /:/host:ro,rslave
         command: "--path.rootfs=/host"
 
     # cadvisor
     cadvisor:
-        image: gcr.io/cadvisor/cadvisor:v0.47.0   
+        image: gcr.io/cadvisor/cadvisor:v0.47.0
         container_name: cadvisor
         restart: unless-stopped
         networks:
@@ -351,4 +352,3 @@ volumes:
     grafana-data:
     # for dev
     conda-data:
-    

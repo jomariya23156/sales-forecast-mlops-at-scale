@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-ui-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      component: {{ .Values.webUiLabel }}
+  template:
+    metadata:
+      labels:
+        component: {{ .Values.webUiLabel }}
+    spec:
+      containers:
+        - name: web-ui
+          image: ariya23156/sfmlops-web-ui
+          ports:
+            - containerPort: {{ .Values.webUiPort }}
+          envFrom:
+            - configMapRef:
+                name: global-configmap
+          env:
+            - name: NGINX_HOST_NAME
+              value: nginx
+            - name: FORECAST_ENDPOINT_URL
+              value: http://nginx/api/forecasters/forecast
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-ui-service
+spec:
+  type: ClusterIP
+  selector:
+    component: {{ .Values.webUiLabel }}
+  ports:
+    - port: {{ .Values.webUiPort }}
+      targetPort: {{ .Values.webUiPort }}

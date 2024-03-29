@@ -1,0 +1,6 @@
+webUiPort: 8000
+webUiLabel: web-ui
+trainingServiceLabel: training-service
+trainingServicePort: 4243
+mlflowPort: 5050
+postgresPort: 5432
