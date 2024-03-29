@@ -31,6 +31,7 @@ jobs:
         with:
           context: ./services/web-ui
           file: ./services/web-ui/Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ariya23156/sfmlops-web-ui:latest
           labels: ${{ steps.meta_web_ui.outputs.labels }}
@@ -46,6 +47,7 @@ jobs:
         with:
           context: ./services/training-service
           file: ./services/training-service/Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ariya23156/sfmlops-training-service:latest
           labels: ${{ steps.meta_training_service.outputs.labels }}
