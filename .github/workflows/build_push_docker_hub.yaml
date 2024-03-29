@@ -32,7 +32,7 @@ jobs:
           context: ./services/web-ui
           file: ./services/web-ui/Dockerfile
           push: true
-          tags: latest
+          tags: ${{ steps.meta_web_ui.outputs.tags }}
           labels: ${{ steps.meta_web_ui.outputs.labels }}
 
       - name: Extract metadata (tags, labels) for Training Service Docker
@@ -47,5 +47,5 @@ jobs:
           context: ./services/training-service
           file: ./services/training-service/Dockerfile
           push: true
-          tags: latest
+          tags: ${{ steps.meta_training_service.outputs.tags }}
           labels: ${{ steps.meta_training_service.outputs.labels }}
