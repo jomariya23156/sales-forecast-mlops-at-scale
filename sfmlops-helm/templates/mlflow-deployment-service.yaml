@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: {{ .Values.mlflowLabel }}
+  template:
+    metadata:
+      labels:
+        component: {{ .Values.mlflowLabel }}
+    spec:
+      volumes:
+        - name: mlflow-data
+          persistentVolumeClaim:
+            claimName: {{ .Values.mlflowPvcName }}
+      containers:
+        - name: mlflow
+          image: ariya23156/sfmlops-mlflow
+          ports:
+            containerPort: {{ .Values.mlflowPort }}
+          volumeMounts:
+            - name: mlflow-data
+              mountPath: {{ .Values.mlflowArtifactRoot }}
+          envFrom:
+            - configMapRef:
+                name: global-configmap
+          env:
+            - name: BACKEND_STORE_URI
+              value: "postgresql://mlflow_user:SuperSecurePwdHere@postgres-service:{{ .Values.postgresPort }}/mlflow_pg_db"
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-service
+spec:
+  type: LoadBalancer
+  selector:
+    component: {{ .Values.mlflowPort }}
+  ports:
+    - port: {{ .Values.mlflowPort }}
+      targetPort: {{ .Values.mlflowPort }}

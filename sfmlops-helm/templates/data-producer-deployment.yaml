@@ -29,4 +29,4 @@ spec:
             - name: DB_CONNECTION_URL
               value: "postgresql://spark_user:SuperSecurePwdHere@postgres-service:{{ .Values.postgresPort }}/spark_pg_db"
             - name: KAFKA_BOOTSTRAP_SERVER
-              value: "sfmlops-helm-kafka:9092"
+              value: "{{ .Values.kafkaReleaseName }}.{{ .Values.kafkaNamespace }}.svc.cluster.local:9092"

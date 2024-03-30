@@ -1,3 +1,6 @@
+kafkaReleaseName: kafka-release
+kafkaNamespace: kafka
+
 webUiPort: 8000
 webUiLabel: web-ui
 
@@ -5,6 +8,9 @@ trainingServiceLabel: training-service
 trainingServicePort: 4243
 
 mlflowPort: 5050
+mlflowLabel: mlflow
+mlflowPvcName: mlflow-pvc
+mlflowArtifactRoot: /storage/mlruns/
 
 postgresPort: 5432
 postgresLabel: postgres
@@ -19,26 +25,3 @@ kafkaUiPort: 8800
 kafkaUiLabel: kafka-ui
 
 dataProducerLabel: data-producer
-
-### Kafka Helm chars config ###
-# ref: https://github.com/bitnami/charts/tree/main/bitnami/kafka
-externalAccess:
-  enabled: 'true'
-  autoDiscovery:
-    enabled: 'true'
-  # controller:
-  #   service:
-  #     domain: kafka
-  #     type: LoadBalancer
-  #     containerPorts:
-  #       external: 9094
-  # broker:
-  #   service:
-  #     type: LoadBalancer
-  #     ports:
-  #       external: 9094
-
-serviceAccount:
-  create: 'true'
-rbac:
-  create: 'true'

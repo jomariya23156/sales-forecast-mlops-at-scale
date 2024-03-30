@@ -4,8 +4,6 @@ Scalable End-to-end MLOps system for sales forecasting.
 
 dataset: https://www.kaggle.com/datasets/pratyushakar/rossmann-store-sales
 
-*Note*: Remove `services/training_service/kaggle.json` in the next commit.
-
 Original docker-compose file: https://airflow.apache.org/docs/apache-airflow/2.8.3/docker-compose.yaml
 Modification made:
 - Removed postgres (connect to our existing with new username and pwd)
@@ -13,6 +11,21 @@ Modification made:
 - Connect to `forecast_network` defined in our existing docker-compose
 - Note when starting: need to specify both compose files i.e. `docker-compose -f docker-compose.yml -f docker-compose-airflow.yml`
 From doc: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html
+
+## Requirements
+1. Docker
+2. Kubernetes
+3. Helm
+
+## How to run using Docker Compose
+1. `docker-compose -f docker-compose.yml -f docker-compose-airflow.yml up -d`
+2. That's it!
+
+## How to run Kubernetes/Helm
+1. `cd sfmlops-helm` and `helm dependency build` to fetch all dependencies
+2. Both install and upgrade main chart: `helm upgrade --install --create-namespace -n mlops sfmlops-helm ./`
+3. Install Kafka: `helm -n kafka upgrade --install kafka-release oci://registry-1.docker.io/bitnamicharts/kafka --create-namespace --version 23.0.7 -f values-kafka.yaml`
+**Note:** If you want to change namespace `kafka` and/or release name `kafka-release` of Kafka, please also change them in `values.yaml`. They are also used in templating.
 
 ## Service port:
 MLflow: 5050
@@ -25,6 +38,13 @@ Nginx: 80
 1. `helm repo add bitnami https://charts.bitnami.com/bitnami`
 2. `cd sfmlops-helm` and `helm dependency build` to fetch all dependencies
 3. Run using `helm install sfmlops-helm sfmlops-helm/ -f values.yaml -f values-kafka.yaml`
+
+### temp
+explicitly install kafka after main chart
+`helm install kafka-release oci://registry-1.docker.io/bitnamicharts/kafka --version 28.0.0 -f values-kafka.yaml`
+
+### Note on Kafka Docker Compose and Helm
+Kafka services on Docker Compose and Halm are different in settings, mainly in Docker Compose, we use KRaft for config management (which is newer), but in Helm
 
 ### Note on Stream processing options
 There are a few options we can do to consume the stream data from Kafka producer and save to Postgres

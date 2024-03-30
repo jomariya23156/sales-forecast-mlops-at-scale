@@ -1,5 +1,4 @@
-# https://docs.github.com/en/actions/publishing-packages/publishing-docker-images
-name: Publish Docker image
+name: Publish Docker images
 
 on:
   push:
@@ -7,14 +6,13 @@ on:
       - master
 
 jobs:
-  push_to_registry:
-    name: Push Docker image to Docker Hub
+  shared_steps: # Job for shared steps
+    name: Prepare for Docker builds
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-      # this is crucial especially when building images for different platform
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -24,52 +22,31 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Extract metadata (tags, labels) for Web UI Docker
-        id: meta_web_ui
+  build_and_push_images: # Job for building and pushing the images
+    name: Build and Push Image
+    runs-on: ubuntu-latest
+    needs: shared_steps # Dependency on the shared steps
+    strategy:
+      matrix:
+        image: [
+          { name: web-ui, context: ./services/web-ui, file: ./services/web-ui/Dockerfile },
+          { name: training-service, context: ./services/training-service, file: ./services/training-service/Dockerfile },
+          { name: data-producer, context: ./services/data-producer, file: ./services/data-producer/Dockerfile},
+          { name: mlflow, context: ./services/mlflow, file: ./services/mlflow/Dockerfile}
+        ]
+    steps:
+      - name: Extract metadata (tags, labels) for ${{ matrix.image.name }} Docker
+        id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ariya23156/sfmlops-web-ui
+          images: ariya23156/sfmlops-${{ matrix.image.name }}
 
-      - name: Build and push Web UI Docker image
+      - name: Build and push ${{ matrix.image.name }} Docker image
         uses: docker/build-push-action@v3
         with:
-          context: ./services/web-ui
-          file: ./services/web-ui/Dockerfile
-          # `linux/arm64,linux/amd64`` also works for building 2 platforms
-          # but the execution time doubles up, so just for the last commit is enough
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.file }}
           platforms: linux/arm64
           push: true
-          tags: ariya23156/sfmlops-web-ui:latest
-          labels: ${{ steps.meta_web_ui.outputs.labels }}
-
-      - name: Extract metadata (tags, labels) for Training Service Docker
-        id: meta_training_service
-        uses: docker/metadata-action@v3
-        with:
-          images: ariya23156/sfmlops-training-service
-
-      - name: Build and push Training Service Docker image
-        uses: docker/build-push-action@v3
-        with:
-          context: ./services/training-service
-          file: ./services/training-service/Dockerfile
-          platforms: linux/arm64
-          push: true
-          tags: ariya23156/sfmlops-training-service:latest
-          labels: ${{ steps.meta_training_service.outputs.labels }}
-
-      - name: Extract metadata (tags, labels) for Data Producer Docker
-        id: meta_data_producer
-        uses: docker/metadata-action@v3
-        with:
-          images: ariya23156/sfmlops-data-producer
-
-      - name: Build and push Data Producer Docker image
-        uses: docker/build-push-action@v3
-        with:
-          context: ./services/data-producer
-          file: ./services/data-producer/Dockerfile
-          platforms: linux/arm64
-          push: true
-          tags: ariya23156/sfmlops-data-producer:latest
-          labels: ${{ steps.meta_data_producer.outputs.labels }}
+          tags: ariya23156/sfmlops-${{ matrix.image.name }}:latest
+          labels: ${{ steps.meta.outputs.labels }}

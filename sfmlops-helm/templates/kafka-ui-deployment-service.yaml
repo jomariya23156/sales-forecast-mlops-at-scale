@@ -19,7 +19,7 @@ spec:
             - containerPort: 8080
           env: # consider using Secret in real production here
             - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
-              value: PLAINTEXT://kafka:9092
+              value: "PLAINTEXT://{{ .Values.kafkaReleaseName }}.{{ .Values.kafkaNamespace }}.svc.cluster.local:9092"
             - name: DYNAMIC_CONFIG_ENABLED
               value: 'true'
 ---

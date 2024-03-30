@@ -1,0 +1,34 @@
+## this repo saves my life, kudooo T^T: https://github.com/quickbooks2018/kafka-bitnami/
+## official reference: https://github.com/bitnami/charts/tree/main/bitnami/kafka
+
+image:
+  debug: true
+replicaCount: 3
+tolerations:
+   - key: "node-role.kubernetes.io/control-plane"
+     operator: "Equal"
+     value: ""
+     effect: "NoSchedule"
+externalAccess:
+  enabled: false
+  autoDiscovery:
+    enabled: true
+kraft:
+  enabled: false
+extraEnvVars:
+  - name: KAFKA_ENABLE_KRAFT
+    value: "false"
+  - name: KAFKA_CFG_DELETE_TOPIC_ENABLE
+    value: "true"  # Add this line to enable topic deletion
+  - name: KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE
+    value: "true"  # Add this line to enable topic auto-creation
+zookeeper:
+  enabled: true
+  replicaCount: 3
+  persistence:
+    enabled: true
+    size: 1Gi
+serviceAccount:
+  create: true
+rbac:
+  create: true

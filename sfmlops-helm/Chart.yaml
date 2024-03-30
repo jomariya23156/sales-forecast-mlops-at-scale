@@ -27,6 +27,6 @@ dependencies:
 - name: ingress-nginx
   version: 4.10.0   # Specify the version you want
   repository: https://kubernetes.github.io/ingress-nginx
-- name: kafka
-  version: 28.0.0
-  repository: oci://registry-1.docker.io/bitnamicharts
+# - name: kafka
+#   version: 23.0.7
+#   repository: oci://registry-1.docker.io/bitnamicharts

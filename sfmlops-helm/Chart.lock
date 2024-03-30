@@ -1,9 +1,0 @@
-dependencies:
-- name: ingress-nginx
-  repository: https://kubernetes.github.io/ingress-nginx
-  version: 4.10.0
-- name: kafka
-  repository: oci://registry-1.docker.io/bitnamicharts
-  version: 28.0.0
-digest: sha256:94fd3c256a7c9694e00d5bdd275b8f02bddb4c190c87c51115eff8debf27d9bc
-generated: "2024-03-30T15:21:14.319604+07:00"

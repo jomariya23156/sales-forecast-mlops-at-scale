@@ -208,6 +208,7 @@ services:
     mlflow:
         platform: linux/arm64
         container_name: mlflow-server
+        image: ariya23156/sfmlops-mlflow
         # restart: always
         build:
             context: ./services/mlflow
