@@ -76,6 +76,7 @@ services:
     data-producer:
         platform: linux/arm64
         container_name: data-producer
+        image: ariya23156/sfmlops-data-producer
         build:
             context: ./services/data-producer
             dockerfile: Dockerfile
@@ -116,6 +117,7 @@ services:
     web-ui:
         platform: linux/arm64
         container_name: web-ui
+        image: ariya23156/sfmlops-web-ui
         build:
             context: ./services/web-ui
             dockerfile: Dockerfile
@@ -136,17 +138,14 @@ services:
     training-service:
         platform: linux/arm64
         container_name: training-service
+        image: ariya23156/sfmlops-training-service
         build:
             context: ./services/training-service
             dockerfile: Dockerfile
             args:
-                FORECAST_SERVICE_PORT: ${TRAINING_SERVICE_PORT}
-                MLFLOW_ARTIFACT_ROOT: ${MLFLOW_ARTIFACT_ROOT}
+                TRAINING_SERVICE_PORT: ${TRAINING_SERVICE_PORT}
         env_file:
             - .env
-        environment:
-            - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
-            - DB_CONNECTION_URL=postgresql://spark_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/spark_pg_db
         networks:
             - forecast-network
         depends_on:
@@ -154,7 +153,6 @@ services:
                 condition: service_healthy
         volumes:
             - ./services/training-service/app/:/service/app/
-            - mlflow-data:${MLFLOW_ARTIFACT_ROOT}
 
     ray:
         platform: linux/arm64
