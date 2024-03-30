@@ -1,26 +1,24 @@
+# mixing paths with rewrite and without rewrite
+# ref: https://github.com/kubernetes/ingress-nginx/issues/3122
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress-service
   annotations:
-    nginx.ingress.kubernetes.io/use-regex: 'true'
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    # nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "86400"
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
 spec:
   ingressClassName: nginx
   rules:
-    - http:
-        paths:
-          - path: /$(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: web-ui-service
-                port:
-                  number: 80
-          - path: /api/trainers/$(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: training-service-service
-                port:
-                  number: {{ .Values.trainingServicePort }}
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-ui-service
+            port:
+              number: {{ .Values.webUiPort }}

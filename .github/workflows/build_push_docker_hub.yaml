@@ -14,6 +14,7 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
+      # this is crucial especially when building images for different platform
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -34,7 +35,7 @@ jobs:
         with:
           context: ./services/web-ui
           file: ./services/web-ui/Dockerfile
-          platforms: linux/arm64
+          platforms: linux/arm64,linux/amd64
           push: true
           tags: ariya23156/sfmlops-web-ui:latest
           labels: ${{ steps.meta_web_ui.outputs.labels }}
@@ -50,7 +51,7 @@ jobs:
         with:
           context: ./services/training-service
           file: ./services/training-service/Dockerfile
-          platforms: linux/arm64
+          platforms: linux/arm64,linux/amd64
           push: true
           tags: ariya23156/sfmlops-training-service:latest
           labels: ${{ steps.meta_training_service.outputs.labels }}

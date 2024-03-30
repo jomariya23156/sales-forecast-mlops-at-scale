@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: web-ui-deployment
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       component: {{ .Values.webUiLabel }}
@@ -17,6 +17,25 @@ spec:
           image: ariya23156/sfmlops-web-ui
           ports:
             - containerPort: {{ .Values.webUiPort }}
+          livenessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: {{ .Values.webUiPort }}
+              scheme: HTTP
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: {{ .Values.webUiPort }}
+              scheme: HTTP
+            timeoutSeconds: 1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 745Mi
+            limits:
+              cpu: 1
+              memory: 2Gi
           envFrom:
             - configMapRef:
                 name: global-configmap
@@ -25,6 +44,8 @@ spec:
               value: nginx
             - name: FORECAST_ENDPOINT_URL
               value: http://nginx/api/forecasters/forecast
+            - name: DB_CONNECTION_URL
+              value: "postgresql://spark_user:SuperSecurePwdHere@postgres-service:{{ .Values.postgresPort }}/spark_pg_db"
 ---
 
 apiVersion: v1
@@ -38,3 +59,18 @@ spec:
   ports:
     - port: {{ .Values.webUiPort }}
       targetPort: {{ .Values.webUiPort }}
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: streamlit-service
+# spec:
+#   type: LoadBalancer
+#   selector:
+#     component: {{ .Values.webUiLabel }}
+#   ports:
+#     - name: streamlit-port
+#       protocol: TCP
+#       port: 8000
+#       targetPort: {{ .Values.webUiPort }}

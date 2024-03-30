@@ -126,6 +126,7 @@ services:
         environment:
             - NGINX_HOST_NAME=nginx
             - FORECAST_ENDPOINT_URL=http://nginx/api/forecasters/forecast
+            - DB_CONNECTION_URL=postgresql://spark_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/spark_pg_db
         networks:
             - forecast-network
         volumes:

@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: {{ .Values.postgresLabel }}
+  template:
+    metadata:
+      labels:
+        component: {{ .Values.postgresLabel }}
+    spec:
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: {{ .Values.postgresPvcName }}
+        - name: postgres-init
+          configMap:
+            name: {{ .Values.postgresInitConfigMapName }}
+      containers:
+        - name: postgres
+          image: postgres:15.3
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U postgres
+            initialDelaySeconds: 5  # Delay before starting probes
+            periodSeconds: 5       # Interval between probes
+            timeoutSeconds: 5       # Probe timeout
+            failureThreshold: 5     # Consecutive failures before considering unhealthy
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+              subPath: postgres # specific to postgres
+            - name: postgres-init
+              mountPath: /docker-entrypoint-initdb.d
+          env: # consider using Secret in real production here
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: postgres
+            - name: POSTGRES_DB
+              value: postgres
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+spec:
+  type: ClusterIP
+  selector:
+    component: {{ .Values.postgresLabel }}
+  ports:
+    - port: {{ .Values.postgresPort }}
+      targetPort: 5432

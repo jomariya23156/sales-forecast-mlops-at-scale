@@ -1,6 +1,16 @@
 webUiPort: 8000
 webUiLabel: web-ui
+
 trainingServiceLabel: training-service
 trainingServicePort: 4243
+
 mlflowPort: 5050
+
 postgresPort: 5432
+postgresLabel: postgres
+postgresPvcName: postgres-pvc
+postgresInitConfigMapName: postgres-init-configmap
+
+pgadminPort: 16543
+pgadminLabel: pgadmin
+pgadminPvcName: pgadmin-pvc

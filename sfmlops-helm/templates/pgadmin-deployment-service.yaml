@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgadmin-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: {{ .Values.pgadminLabel }}
+  template:
+    metadata:
+      labels:
+        component: {{ .Values.pgadminLabel }}
+    spec:
+      volumes:
+        - name: pgadmin-data
+          persistentVolumeClaim:
+            claimName: {{ .Values.postgresPvcName }}
+      containers:
+        - name: pgadmin
+          image: dpage/pgadmin4
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: pgadmin-data
+              mountPath: /var/lib/pgadmin
+          env:
+            - name: PGADMIN_DEFAULT_EMAIL
+              value: pgadmin@gmail.com
+            - name: PGADMIN_DEFAULT_PASSWORD
+              value: SuperSecurePwdHere
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgadmin-service
+spec:
+  type: LoadBalancer
+  selector:
+    component: {{ .Values.pgadminLabel }}
+  ports:
+    - port: {{ .Values.pgadminPort }}
+      targetPort: 80
