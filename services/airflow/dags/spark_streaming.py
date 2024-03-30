@@ -13,8 +13,9 @@ from db_utils import prepare_db
 
 SALES_TABLE_NAME = os.getenv("SALES_TABLE_NAME", "rossman_sales")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
-POSTGRES_CONNECTION_URL = os.getenv(
-    "POSTGRES_CONNECTION_URL", f"jdbc:postgresql://postgres:{POSTGRES_PORT}/spark_pg_db"
+POSTGRES_JDBC_CONNECTION_URL = os.getenv(
+    "POSTGRES_JDBC_CONNECTION_URL",
+    f"jdbc:postgresql://postgres:{POSTGRES_PORT}/spark_pg_db",
 )
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "sale_rossman_store")
 SPARK_STREAM_CHECKPOINTS_PATH = os.getenv(
@@ -79,7 +80,7 @@ def write_df_to_db(processed_df):
         processed_df.writeStream.foreachBatch(
             lambda batch_df, batch_id: (
                 batch_df.write.jdbc(
-                    POSTGRES_CONNECTION_URL,
+                    POSTGRES_JDBC_CONNECTION_URL,
                     SALES_TABLE_NAME,
                     "append",
                     properties=POSTGRES_PROPERTIES,

@@ -20,7 +20,7 @@ spec:
         - name: mlflow
           image: ariya23156/sfmlops-mlflow
           ports:
-            containerPort: {{ .Values.mlflowPort }}
+            - containerPort: {{ .Values.mlflowPort }}
           volumeMounts:
             - name: mlflow-data
               mountPath: {{ .Values.mlflowArtifactRoot }}
@@ -39,7 +39,7 @@ metadata:
 spec:
   type: LoadBalancer
   selector:
-    component: {{ .Values.mlflowPort }}
+    component: {{ .Values.mlflowLabel }}
   ports:
     - port: {{ .Values.mlflowPort }}
       targetPort: {{ .Values.mlflowPort }}

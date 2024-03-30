@@ -26,6 +26,15 @@ From doc: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-com
 2. Both install and upgrade main chart: `helm upgrade --install --create-namespace -n mlops sfmlops-helm ./`
 3. Install Kafka: `helm -n kafka upgrade --install kafka-release oci://registry-1.docker.io/bitnamicharts/kafka --create-namespace --version 23.0.7 -f values-kafka.yaml`
 **Note:** If you want to change namespace `kafka` and/or release name `kafka-release` of Kafka, please also change them in `values.yaml`. They are also used in templating.
+4. Install Airflow:
+   1. `helm repo add apache-airflow https://airflow.apache.org`
+   2. `helm -n airflow upgrade --install airflow apache-airflow/airflow --create-namespace --version 1.13.1 -f values-airflow.yaml`
+5. Forward Airflow UI port, so we can access: `kubectl port-forward svc/airflow-webserver 8080:8080 --namespace airflow`
+
+## Cleanup steps
+1. `helm uninstall sfmlops-helm -n mlops`
+2. `helm uninstall kafka-release -n kafka`
+3. `helm uninstall airflow -n airflow`
 
 ## Service port:
 MLflow: 5050

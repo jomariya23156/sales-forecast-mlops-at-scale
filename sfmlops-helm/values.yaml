@@ -25,3 +25,5 @@ kafkaUiPort: 8800
 kafkaUiLabel: kafka-ui
 
 dataProducerLabel: data-producer
+
+sparkStreamingPvcName: spark-streaming-pvc

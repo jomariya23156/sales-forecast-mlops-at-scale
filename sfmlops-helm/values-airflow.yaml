@@ -1,0 +1,41 @@
+# IMPORTANT: /opt/airflow is hardcoded in ./services/airflow/Dockerfile
+# if you want to change, don't forget to change there too
+airflowHome: /opt/airflow
+airflowVersion: "2.8.3"
+images:
+  airflow:
+    repository: ariya23156/sfmlops-airflow-spark
+    tag: latest
+
+ports:
+  airflowUI: 8080
+
+config:
+  core:
+    dags_folder: /opt/airflow/dags
+
+# Volumes for all airflow containers
+volumes:
+  - name: spark-streaming-checkpoints
+    persistentVolumeClaim:
+      claimName: spark-streaming-pvc
+
+# VolumeMounts for all airflow containers
+volumeMounts:
+  - name: spark-streaming-checkpoints
+    mountPath: /opt/airflow/spark_streaming_checkpoints
+
+# Environment variables for all airflow containers
+env:
+  - name: SPARK_STREAM_CHECKPOINTS_PATH
+    value: /opt/airflow/spark_streaming_checkpoints
+  - name: SALES_TABLE_NAME
+    value: rossman_sales
+  - name: FORECAST_TABLE_NAME
+    value: forecast_results
+  - name: POSTGRES_PORT
+    value: "5432"
+  - name: DB_CONNECTION_URL
+    value: "postgresql://spark_user:SuperSecurePwdHere@postgres-service.mlops.svc.cluster.local:5432/spark_pg_db"
+  - name: POSTGRES_JDBC_CONNECTION_URL
+    value: "jdbc:postgresql://postgres-service.mlops.svc.cluster.local:5432/spark_pg_db"
