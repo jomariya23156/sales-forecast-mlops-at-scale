@@ -14,3 +14,31 @@ postgresInitConfigMapName: postgres-init-configmap
 pgadminPort: 16543
 pgadminLabel: pgadmin
 pgadminPvcName: pgadmin-pvc
+
+kafkaUiPort: 8800
+kafkaUiLabel: kafka-ui
+
+dataProducerLabel: data-producer
+
+### Kafka Helm chars config ###
+# ref: https://github.com/bitnami/charts/tree/main/bitnami/kafka
+externalAccess:
+  enabled: 'true'
+  autoDiscovery:
+    enabled: 'true'
+  # controller:
+  #   service:
+  #     domain: kafka
+  #     type: LoadBalancer
+  #     containerPorts:
+  #       external: 9094
+  # broker:
+  #   service:
+  #     type: LoadBalancer
+  #     ports:
+  #       external: 9094
+
+serviceAccount:
+  create: 'true'
+rbac:
+  create: 'true'

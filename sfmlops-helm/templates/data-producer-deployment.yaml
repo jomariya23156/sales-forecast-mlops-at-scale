@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-producer-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: {{ .Values.dataProducerLabel }}
+  template:
+    metadata:
+      labels:
+        component: {{ .Values.dataProducerLabel }}
+    spec:
+      containers:
+        - name: data-producer
+          image: ariya23156/sfmlops-data-producer
+          resources:
+            requests:
+              cpu: 100m
+              memory: 200Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
+          envFrom:
+            - configMapRef:
+                name: global-configmap
+          env:
+            - name: DB_CONNECTION_URL
+              value: "postgresql://spark_user:SuperSecurePwdHere@postgres-service:{{ .Values.postgresPort }}/spark_pg_db"
+            - name: KAFKA_BOOTSTRAP_SERVER
+              value: "sfmlops-helm-kafka:9092"

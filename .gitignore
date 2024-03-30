@@ -1,7 +1,7 @@
 .DS_Store
 __pycache__/
 .ipynb_checkpoints
-datasets/
+datasets_dnt_track/
 create_cred.sh
 kaggle.json
 services/airflow/config/

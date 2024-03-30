@@ -21,11 +21,16 @@ Ray Dashboard: 8265
 Redis: 6379
 Nginx: 80
 
+### bitnami/kafka helm install
+1. `helm repo add bitnami https://charts.bitnami.com/bitnami`
+2. `cd sfmlops-helm` and `helm dependency build` to fetch all dependencies
+3. Run using `helm install sfmlops-helm sfmlops-helm/ -f values.yaml -f values-kafka.yaml`
+
 ### Note on Stream processing options
 There are a few options we can do to consume the stream data from Kafka producer and save to Postgres
 1. Dead and simple consumer with SQLAlchemy
     - Consume the message from a topic with KafkaConsumer class
-    - Mannually use SQLAlchemy to save the new data into Postgres  
+    - Mannually use SQLAlchemy to save the new data into Postgres
 
     Pros:
     - Easy and Straightforward
@@ -43,7 +48,7 @@ There are a few options we can do to consume the stream data from Kafka producer
 
     Cons:
     - Another tool to learn (make the learning curve for the project steeper)
-3. Kafka Connect -> Plugin tool from Kafka to connect to external tools to receive or send message (source or sink connectors in Kafka terms) 
+3. Kafka Connect -> Plugin tool from Kafka to connect to external tools to receive or send message (source or sink connectors in Kafka terms)
 
     Pros:
     - Support Kafka natively (of course)

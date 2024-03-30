@@ -1,8 +1,13 @@
 FROM python:3.9.17-slim
 
-# for mounting datasets in (actually we can just mount without mkdir, 
+# for mounting datasets in (actually we can just mount without mkdir,
 # but wanna explicitly included here so I don't forget LOL)
 RUN mkdir -p /service/datasets
+
+# the better way to do this is to download files into container from the internet
+# using lib or scripts at run time, but since my files are quite small and
+# I'm LAZY to change my code now LOL, sorry mans
+COPY datasets/ /service/datasets
 
 COPY requirements.txt /service/requirements.txt
 

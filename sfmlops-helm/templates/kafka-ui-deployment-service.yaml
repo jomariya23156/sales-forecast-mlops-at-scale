@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: {{ .Values.kafkaUiLabel }}
+  template:
+    metadata:
+      labels:
+        component: {{ .Values.kafkaUiLabel }}
+    spec:
+      containers:
+        - name: kafka-ui
+          image: provectuslabs/kafka-ui:latest
+          ports:
+            - containerPort: 8080
+          env: # consider using Secret in real production here
+            - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+              value: PLAINTEXT://kafka:9092
+            - name: DYNAMIC_CONFIG_ENABLED
+              value: 'true'
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-ui-service
+spec:
+  type: LoadBalancer
+  selector:
+    component: {{ .Values.kafkaUiLabel }}
+  ports:
+    - port: {{ .Values.kafkaUiPort }}
+      targetPort: 8080
