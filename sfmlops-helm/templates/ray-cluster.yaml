@@ -49,9 +49,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: global-configmap
-          containerEnv:
-            - name: MLFLOW_TRACKING_URI
-              value: "http://mlflow-service:{{ .Values.mlflowPort }}"
           volumeMounts:
             - mountPath: /tmp/ray
               name: ray-logs

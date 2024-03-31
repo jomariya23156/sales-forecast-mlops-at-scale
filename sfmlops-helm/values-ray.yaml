@@ -1,0 +1,12 @@
+image:
+  tag: 2.9.3-py39-cpu-aarch64
+
+head:
+  containerEnv:
+    - name: MLFLOW_TRACKING_URI
+      value: "http://mlflow-service:5050"
+
+worker:
+  containerEnv:
+    - name: MLFLOW_TRACKING_URI
+      value: "http://mlflow-service:5050"

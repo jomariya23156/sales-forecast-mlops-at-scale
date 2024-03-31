@@ -31,7 +31,8 @@ jobs:
           { name: data-producer, context: ./services/data-producer, file: ./services/data-producer/Dockerfile },
           { name: mlflow, context: ./services/mlflow, file: ./services/mlflow/Dockerfile },
           { name: airflow-spark, context: ./services/airflow, file: ./services/airflow/Dockerfile },
-          { name: ray, context: ./services/ray, file: ./services/ray/Dockerfile }
+          { name: ray, context: ./services/ray, file: ./services/ray/Dockerfile },
+          { name: forecast-service, context: ./services/forecast-service, file: ./services/forecast-service/Dockerfile }
         ]
     steps:
       - name: Download repository artifact

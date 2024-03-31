@@ -23,7 +23,7 @@ From doc: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-com
 
 ## How to run Kubernetes/Helm
 1. `cd sfmlops-helm` and `helm dependency build` to fetch all dependencies
-2. Both install and upgrade the main chart: `helm upgrade --install --create-namespace -n mlops sfmlops-helm ./ -f values.yaml`
+2. Both install and upgrade the main chart: `helm upgrade --install --create-namespace -n mlops sfmlops-helm ./ -f values.yaml -f values-ray.yaml`
 3. Deploy Kafka: `helm -n kafka upgrade --install kafka-release oci://registry-1.docker.io/bitnamicharts/kafka --create-namespace --version 23.0.7 -f values-kafka.yaml`
 4. Deploy Airflow:
    1. `helm repo add apache-airflow https://airflow.apache.org`

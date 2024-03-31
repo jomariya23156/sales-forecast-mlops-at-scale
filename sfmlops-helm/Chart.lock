@@ -1,0 +1,12 @@
+dependencies:
+- name: ingress-nginx
+  repository: https://kubernetes.github.io/ingress-nginx
+  version: 4.10.0
+- name: kuberay-operator
+  repository: https://ray-project.github.io/kuberay-helm/
+  version: 1.1.0-rc.0
+- name: ray-cluster
+  repository: https://ray-project.github.io/kuberay-helm/
+  version: 1.1.0-rc.0
+digest: sha256:8be42ea3b59b9b55ccd9d8ed173a5072eae637e988900dac1cdb28ef126f3724
+generated: "2024-03-31T14:18:24.709723+07:00"
