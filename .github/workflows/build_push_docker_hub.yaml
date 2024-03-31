@@ -26,13 +26,13 @@ jobs:
     strategy:
       matrix:
         image: [
-          { name: web-ui, context: ./services/web-ui, file: ./services/web-ui/Dockerfile, buildargs: {} },
-          { name: training-service, context: ./services/training-service, file: ./services/training-service/Dockerfile, buildargs: {} },
-          { name: data-producer, context: ./services/data-producer, file: ./services/data-producer/Dockerfile, buildargs: {} },
-          { name: mlflow, context: ./services/mlflow, file: ./services/mlflow/Dockerfile, buildargs: {} },
-          { name: airflow-spark, context: ./services/airflow, file: ./services/airflow/Dockerfile, buildargs: { AIRFLOW_HOME: /opt/airflow } },
+          { name: web-ui, context: ./services/web-ui, file: ./services/web-ui/Dockerfile, buildargs: [] },
+          { name: training-service, context: ./services/training-service, file: ./services/training-service/Dockerfile, buildargs: [] },
+          { name: data-producer, context: ./services/data-producer, file: ./services/data-producer/Dockerfile, buildargs: [] },
+          { name: mlflow, context: ./services/mlflow, file: ./services/mlflow/Dockerfile, buildargs: [] },
+          { name: airflow-spark, context: ./services/airflow, file: ./services/airflow/Dockerfile, buildargs: [ 'AIRFLOW_HOME=/opt/airflow' ] },
           # for amd64 (x86_64) please leave ARCH_TRAILING_IMG_NAME empty
-          { name: ray, context: ./services/ray, file: ./services/ray/Dockerfile, buildargs: { MLFLOW_ARTIFACT_ROOT: /storage/mlruns, ARCH_TRAILING_IMG_NAME: "-aarch64" } }
+          { name: ray, context: ./services/ray, file: ./services/ray/Dockerfile, buildargs: [ 'MLFLOW_ARTIFACT_ROOT=/storage/mlruns', 'ARCH_TRAILING_IMG_NAME="-aarch64"' ] }
         ]
     steps:
       - name: Download repository artifact
