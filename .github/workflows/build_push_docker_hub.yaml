@@ -69,4 +69,4 @@ jobs:
           build-args: |
             AIRFLOW_HOME=/opt/airflow
             MLFLOW_ARTIFACT_ROOT=/storage/mlruns
-            ARCH_TRAILING_IMG_NAME="-aarch64"
+            ARCH_TRAILING_IMG_NAME=-aarch64

@@ -1,3 +1,4 @@
+## from https://github.com/ray-project/kuberay/blob/v1.0.0/ray-operator/config/samples/ray-cluster.complete.yaml
 # The resource requests and limits in this config are too small for production!
 # For examples with more realistic resource configuration, see
 # ray-cluster.complete.large.yaml and
@@ -45,6 +46,9 @@ spec:
             preStop:
               exec:
                 command: ["/bin/sh","-c","ray stop"]
+          envFrom:
+            - configMapRef:
+                name: global-configmap
           volumeMounts:
             - mountPath: /tmp/ray
               name: ray-logs
