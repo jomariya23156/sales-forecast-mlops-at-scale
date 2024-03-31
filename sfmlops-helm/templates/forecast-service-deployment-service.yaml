@@ -12,11 +12,18 @@ spec:
       labels:
         component: {{ .Values.forecastServiceLabel }}
     spec:
+      volumes:
+        - name: mlflow-data
+          persistentVolumeClaim:
+            claimName: {{ .Values.mlflowPvcName }}
       containers:
         - name: forecast-service
           image: ariya23156/sfmlops-forecast-service
           ports:
             - containerPort: {{ .Values.forecastServicePort }}
+          volumeMounts:
+            - name: mlflow-data
+              mountPath: {{ .Values.mlflowArtifactRoot }}
           envFrom:
             - configMapRef:
                 name: global-configmap

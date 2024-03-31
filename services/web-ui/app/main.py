@@ -17,7 +17,8 @@ from common_utils import (
     df_from_forecast_response,
 )
 
-NGINX_HOST_NAME = os.getenv("NGINX_HOST_NAME", "nginx")
+TRAINING_SERVICE_SERVER = os.getenv("TRAINING_SERVICE_SERVER", "nginx")
+TRAINING_SERVICE_URL_PREFIX = os.getenv("TRAINING_SERVICE_URL_PREFIX", "api/trainers/")
 FORECAST_ENDPOINT_URL = os.getenv(
     "FORECAST_ENDPOINT_URL", f"http://nginx/api/forecasters/forecast"
 )
@@ -101,14 +102,14 @@ if __name__ == "__main__":
                     f"Store ID: {input_store_id} | Product name: {input_product_name}"
                 )
                 resp = requests.post(
-                    f"http://{NGINX_HOST_NAME}/api/trainers/{input_store_id}/{input_product_name}/train"
+                    f"http://{TRAINING_SERVICE_SERVER}/{TRAINING_SERVICE_URL_PREFIX}{input_store_id}/{input_product_name}/train"
                 )
                 resp_json = resp.json()
                 st.json(resp_json)
                 st.write("Watching training task status...")
                 status_to_wait_for = {"SUCCEEDED", "STOPPED", "FAILED"}
                 exit_status = wait_until_status(
-                    endpoint=f"http://{NGINX_HOST_NAME}/api/trainers/training_job_status/{resp_json['train_job_id']}",
+                    endpoint=f"http://{TRAINING_SERVICE_SERVER}/{TRAINING_SERVICE_URL_PREFIX}training_job_status/{resp_json['train_job_id']}",
                     status_to_wait_for=status_to_wait_for,
                     poll_interval=1,
                     timeout_seconds=30,  # 30 seconds

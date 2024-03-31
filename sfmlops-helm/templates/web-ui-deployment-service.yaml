@@ -40,10 +40,12 @@ spec:
             - configMapRef:
                 name: global-configmap
           env:
-            - name: NGINX_HOST_NAME
-              value: localhost
+            - name: TRAINING_SERVICE_SERVER
+              value: "training-service-service.mlops.svc.cluster.local:4243"
+            - name: TRAINING_SERVICE_URL_PREFIX
+              value: # this is intentional to pass in an empty string
             - name: FORECAST_ENDPOINT_URL
-              value: http://localhost/api/forecasters/forecast
+              value: "http://forecast-service-service.mlops.svc.cluster.local:4242/forecast"
             - name: DB_CONNECTION_URL
               value: "postgresql://spark_user:SuperSecurePwdHere@postgres-service:{{ .Values.postgresPort }}/spark_pg_db"
 ---
@@ -59,18 +61,3 @@ spec:
   ports:
     - port: {{ .Values.webUiPort }}
       targetPort: {{ .Values.webUiPort }}
-
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: streamlit-service
-# spec:
-#   type: LoadBalancer
-#   selector:
-#     component: {{ .Values.webUiLabel }}
-#   ports:
-#     - name: streamlit-port
-#       protocol: TCP
-#       port: 8000
-#       targetPort: {{ .Values.webUiPort }}

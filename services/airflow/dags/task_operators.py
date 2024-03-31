@@ -13,7 +13,11 @@ from db_utils import (
     prepare_db,
 )
 
-NGINX_HOST_NAME = os.getenv("NGINX_HOST_NAME", "nginx")
+TRAINING_SERVICE_SERVER = os.getenv("TRAINING_SERVICE_SERVER", "nginx")
+TRAINING_SERVICE_URL_PREFIX = os.getenv("TRAINING_SERVICE_URL_PREFIX", "api/trainers/")
+FORECAST_ENDPOINT_URL = os.getenv(
+    "FORECAST_ENDPOINT_URL", f"http://nginx/api/forecasters/forecast"
+)
 SALES_TABLE_NAME = os.getenv("SALES_TABLE_NAME", "rossman_sales")
 FORECAST_TABLE_NAME = os.getenv("FORECAST_TABLE_NAME", "forecast_results")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
@@ -54,7 +58,7 @@ def check_status(**kwargs):  # New function for task
     print("Watching training task status...")
     status_to_wait_for = {"SUCCEEDED", "STOPPED", "FAILED"}
     wait_until_status(
-        endpoint=f"http://{NGINX_HOST_NAME}/api/trainers/training_job_status/{resp_json['train_job_id']}",
+        endpoint=f"http://{TRAINING_SERVICE_SERVER}/{TRAINING_SERVICE_URL_PREFIX}training_job_status/{resp_json['train_job_id']}",
         status_to_wait_for=status_to_wait_for,
         poll_interval=5,
         timeout_seconds=60 * 30,
@@ -96,9 +100,7 @@ def post_forecast(**kwargs):  # New function for task
     ti = kwargs["ti"]
     requst_body = ti.xcom_pull(task_ids="build_request_body")  # Pull XCom
     print(f"type: {type(requst_body)}")
-    resp = requests.post(
-        f"http://{NGINX_HOST_NAME}/api/forecasters/forecast", json=requst_body
-    )
+    resp = requests.post(FORECAST_ENDPOINT_URL, json=requst_body)
     print(f"Status: {resp.status_code}")
     return resp.json()
 

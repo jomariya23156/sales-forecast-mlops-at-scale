@@ -11,7 +11,8 @@ from task_operators import (
     save_forecasts_to_db,
 )
 
-NGINX_HOST_NAME = os.getenv("NGINX_HOST_NAME", "nginx")
+TRAINING_SERVICE_SERVER = os.getenv("TRAINING_SERVICE_SERVER", "nginx")
+TRAINING_SERVICE_URL_PREFIX = os.getenv("TRAINING_SERVICE_URL_PREFIX", "api/trainers/")
 
 with DAG(
     dag_id="train_predict_to_db_dag",
@@ -35,8 +36,8 @@ with DAG(
     # POST to the training service
     trigger_train_task = BashOperator(
         task_id="call_train_service",
-        bash_command=f"curl -X POST http://{NGINX_HOST_NAME}/api/trainers/train",
-        # bash_command=f"curl -X POST http://{NGINX_HOST_NAME}/api/trainers/100/product_A/train",
+        bash_command=f"curl -X POST http://{TRAINING_SERVICE_SERVER}/{TRAINING_SERVICE_URL_PREFIX}train",
+        # bash_command=f"curl -X POST http://{TRAINING_SERVICE_SERVER}/{TRAINING_SERVICE_URL_PREFIX}100/product_A/train",
     )
 
     # Poll the status of the training job

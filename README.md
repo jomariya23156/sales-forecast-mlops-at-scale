@@ -24,19 +24,13 @@ From doc: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-com
 ## How to run Kubernetes/Helm
 1. `cd sfmlops-helm` and `helm dependency build` to fetch all dependencies
 2. Both install and upgrade the main chart: `helm upgrade --install --create-namespace -n mlops sfmlops-helm ./ -f values.yaml -f values-ray.yaml`
-3. Deploy Kafka: `helm -n kafka upgrade --install kafka-release oci://registry-1.docker.io/bitnamicharts/kafka --create-namespace --version 23.0.7 -f values-kafka.yaml`
+3. Deploy Kafka:
+   1. `helm repo add bitnami https://charts.bitnami.com/bitnami`
+   2. `helm -n kafka upgrade --install kafka-release oci://registry-1.docker.io/bitnamicharts/kafka --create-namespace --version 23.0.7 -f values-kafka.yaml`
 4. Deploy Airflow:
    1. `helm repo add apache-airflow https://airflow.apache.org`
    2. `helm -n airflow upgrade --install airflow apache-airflow/airflow --create-namespace --version 1.13.1 -f values-airflow.yaml`
 5. Forward Airflow UI port, so we can access: `kubectl port-forward svc/airflow-webserver 8080:8080 --namespace airflow`
-6. Install Ray (KubeRay):
-   1. Deploy KubeRay operator:
-      1. `helm repo add kuberay https://ray-project.github.io/kuberay-helm/ && helm repo update`
-      2. `helm upgrade --install -n mlops kuberay-operator kuberay/kuberay-operator --version 1.1.0-rc.0`
-   2. Deploy RayCluster Custom Resource (CR)
-      1. `helm upgrade --install -n mlops raycluster kuberay/ray-cluster --version 1.1.0-rc.0 --set 'image.tag=2.9.3-py39-cpu-aarch64'`
-      2. Verify by `kubectl get rayclusters`
-7. Forward Ray Dashboard: `kubectl port-forward --address 0.0.0.0 service/ray-head-service 8265:8265`
 
 **Note:** If you want to change namespace `kafka` and/or release name `kafka-release` of Kafka, please also change them in `values.yaml` and `KAFKA_BOOTSTRAP_SERVER` env var in `values-airflow.yaml`. They are also used in templating.
 
@@ -52,18 +46,13 @@ Ray Dashboard: 8265
 Nginx: 80
 Forecast service: 4242 (proxied by nginx)
 Training service: 4243 (proxied by nginx)
-
-### bitnami/kafka helm install
-1. `helm repo add bitnami https://charts.bitnami.com/bitnami`
-2. `cd sfmlops-helm` and `helm dependency build` to fetch all dependencies
-3. Run using `helm install sfmlops-helm sfmlops-helm/ -f values.yaml -f values-kafka.yaml`
-
-### temp
-explicitly install kafka after main chart
-`helm install kafka-release oci://registry-1.docker.io/bitnamicharts/kafka --version 28.0.0 -f values-kafka.yaml`
+Postgres: 5432
+PGadmin: 16543
+Kafka: 9092
+Kafka UI: 8800
 
 ### Note on Kafka Docker Compose and Helm
-Kafka services on Docker Compose and Halm are different in settings, mainly in Docker Compose, we use KRaft for config management (which is newer), but in Helm
+Kafka services on Docker Compose and Halm are different in settings, mainly in Docker Compose, we use KRaft for config management (which is newer), but in Helm, we use ZooKeeper because, honestly, I'm not managed to pull it off with KRaft, sorry :'( (It's quite complex).
 
 ### Note on Stream processing options
 There are a few options we can do to consume the stream data from Kafka producer and save to Postgres
@@ -114,4 +103,6 @@ If we restart the Ray container, all previous job history will be gone because R
 
 ## References
 - Airflow Helm: https://airflow.apache.org/docs/helm-chart/stable/index.html
+- Airflow Helm default values.yaml: https://github.com/apache/airflow/blob/main/chart/values.yaml
+- Ray sample config: https://github.com/ray-project/kuberay/tree/master/ray-operator/config/samples
 - Bitnami Kafka Helm: https://github.com/bitnami/charts/tree/main/bitnami/kafka

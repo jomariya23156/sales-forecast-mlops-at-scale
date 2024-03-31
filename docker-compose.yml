@@ -84,6 +84,7 @@ services:
             - .env
         environment:
             - KAFKA_BOOTSTRAP_SERVER=kafka:9092
+            - DB_CONNECTION_URL=postgresql://spark_user:SuperSecurePwdHere@postgres:{POSTGRES_PORT}/spark_pg_db
         networks:
             - forecast-network
         volumes:
@@ -126,7 +127,8 @@ services:
         env_file:
             - .env
         environment:
-            - NGINX_HOST_NAME=nginx
+            - TRAINING_SERVICE_SERVER=nginx
+            - TRAINING_SERVICE_URL_PREFIX=api/trainers/ # trailing / is important
             - FORECAST_ENDPOINT_URL=http://nginx/api/forecasters/forecast
             - DB_CONNECTION_URL=postgresql://spark_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/spark_pg_db
         networks:
@@ -146,6 +148,9 @@ services:
                 TRAINING_SERVICE_PORT: ${TRAINING_SERVICE_PORT}
         env_file:
             - .env
+        environment:
+            - RAY_DASHBOARD_HOST=ray
+            - RAY_DASHBOARD_PORT=8265
         networks:
             - forecast-network
         depends_on:
@@ -175,6 +180,8 @@ services:
             - RAY_PROMETHEUS_HOST=http://prometheus:9090
             - RAY_PROMETHEUS_NAME=Prometheus
             - RAY_GRAFANA_IFRAME_HOST=http://localhost:${GRAFANA_PORT}
+            - MLFLOW_TRACKING_URI=http://mlflow:5050
+            - DB_CONNECTION_URL=postgresql://spark_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/spark_pg_db
         networks:
             - forecast-network
             - backend-network

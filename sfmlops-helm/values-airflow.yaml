@@ -6,6 +6,7 @@ images:
   airflow:
     repository: ariya23156/sfmlops-airflow-spark
     tag: latest
+    pullPolicy: Always
 
 web:
   service:
@@ -45,5 +46,9 @@ env:
     value: "jdbc:postgresql://postgres-service.mlops.svc.cluster.local:5432/spark_pg_db"
   - name: KAFKA_BOOTSTRAP_SERVER
     value: "kafka-release.kafka.svc.cluster.local:9092"
-  - name: NGINX_HOST_NAME
-    value: localhost
+  - name: TRAINING_SERVICE_SERVER
+    value: "training-service-service.mlops.svc.cluster.local:4243"
+  - name: TRAINING_SERVICE_URL_PREFIX
+    value: # this is intentional to pass in an empty string
+  - name: FORECAST_ENDPOINT_URL
+    value: "http://forecast-service-service.mlops.svc.cluster.local:4242/forecast"
