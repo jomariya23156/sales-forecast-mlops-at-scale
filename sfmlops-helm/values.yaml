@@ -26,4 +26,5 @@ kafkaUiLabel: kafka-ui
 
 dataProducerLabel: data-producer
 
+# This is also hardcoded in `values-airflow.yaml`
 sparkStreamingPvcName: spark-streaming-pvc

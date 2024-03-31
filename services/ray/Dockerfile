@@ -1,8 +1,9 @@
-FROM rayproject/ray:2.9.3-py39-cpu-aarch64
+ARG ARCH_TRAILING_IMG_NAME=${ARCH_TRAILING_IMG_NAME}
+FROM rayproject/ray:2.9.3-py39-cpu${ARCH_TRAILING_IMG_NAME}
 
 USER root
 
-ARG MLFLOW_ARTIFACT_ROOT=$MLFLOW_ARTIFACT_ROOT
+ARG MLFLOW_ARTIFACT_ROOT=${MLFLOW_ARTIFACT_ROOT}
 # Config path dir and permission for mlflow artifacts storage
 # cuz mlflow also stores artifacts to client's container
 RUN mkdir -p $MLFLOW_ARTIFACT_ROOT && \

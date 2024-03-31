@@ -1,7 +1,7 @@
 # base Airflow image
 FROM apache/airflow:2.8.3-python3.9
 
-ARG AIRFLOW_HOME=/opt/airflow
+ARG AIRFLOW_HOME=${AIRFLOW_HOME}
 
 USER root
 

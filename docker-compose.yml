@@ -157,12 +157,14 @@ services:
     ray:
         platform: linux/arm64
         container_name: ray-head
-        image: rayproject/ray:2.9.3-py39-cpu-aarch64
+        image: ariya23156/sfmlops-ray
         build:
             context: ./services/ray
             dockerfile: Dockerfile
             args:
                 MLFLOW_ARTIFACT_ROOT: ${MLFLOW_ARTIFACT_ROOT}
+                # for amd64 (x86_64) please leave ARCH_TRAILING_IMG_NAME empty
+                ARCH_TRAILING_IMG_NAME: "-aarch64"
         shm_size: '2gb'
         # NOTE: if you change RAY_METRICS_EXPORT_PORT in .env,
         # you need to change the port in prometheus.yaml too

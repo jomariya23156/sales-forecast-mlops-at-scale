@@ -17,6 +17,7 @@ POSTGRES_JDBC_CONNECTION_URL = os.getenv(
     "POSTGRES_JDBC_CONNECTION_URL",
     f"jdbc:postgresql://postgres:{POSTGRES_PORT}/spark_pg_db",
 )
+KAFKA_BOOTSTRAP_SERVER = os.getenv("KAFKA_BOOTSTRAP_SERVER", "kafka:9092")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "sale_rossman_store")
 SPARK_STREAM_CHECKPOINTS_PATH = os.getenv(
     "SPARK_STREAM_CHECKPOINTS_PATH", "/home/airflow/spark_streaming_checkpoints"
@@ -44,7 +45,7 @@ def create_spark_session() -> SparkSession:
 def create_df_from_kafka(spark_session) -> DataFrame:
     df = (
         spark_session.readStream.format("kafka")
-        .option("kafka.bootstrap.servers", "kafka:9092")
+        .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVER)
         .option("subscribe", KAFKA_TOPIC)
         .option("startingOffsets", "earliest")
         .load()

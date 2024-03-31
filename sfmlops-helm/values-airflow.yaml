@@ -39,3 +39,5 @@ env:
     value: "postgresql://spark_user:SuperSecurePwdHere@postgres-service.mlops.svc.cluster.local:5432/spark_pg_db"
   - name: POSTGRES_JDBC_CONNECTION_URL
     value: "jdbc:postgresql://postgres-service.mlops.svc.cluster.local:5432/spark_pg_db"
+  - name: KAFKA_BOOTSTRAP_SERVER
+    value: "kafka-release.kafka.svc.cluster.local:9092"

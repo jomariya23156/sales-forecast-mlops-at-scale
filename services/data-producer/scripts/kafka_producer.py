@@ -11,7 +11,7 @@ from kafka import KafkaProducer
 
 # look like internally kafka-python also use logging default setting
 # but we don't want to see its log and share the logger, so need to create a new one
-logger = logging.getLogger('kafka_producer.py')
+logger = logging.getLogger("kafka_producer.py")
 logger.setLevel(logging.INFO)
 log_format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 ch = logging.StreamHandler()
@@ -33,6 +33,7 @@ def preprocess_input_df(df: pd.DataFrame) -> pd.DataFrame:
     df["productname"] = "product_A"
     df = df.sort_values("date", ascending=True).reset_index(drop=True)
     return df
+
 
 # This is the place where you have to modify the data source to
 # your real use case e.g. api, external source, etc. then send
@@ -61,5 +62,5 @@ while True:
     producer.flush()
 
     pointer += 1
-    time.sleep(5)
-    # time.sleep(60*5) # every 5 mins
+    time.sleep(10)  # for demo and develop
+    # time.sleep(60) # every 1 min

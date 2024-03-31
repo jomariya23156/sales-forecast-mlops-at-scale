@@ -23,13 +23,20 @@ From doc: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-com
 
 ## How to run Kubernetes/Helm
 1. `cd sfmlops-helm` and `helm dependency build` to fetch all dependencies
-2. Both install and upgrade main chart: `helm upgrade --install --create-namespace -n mlops sfmlops-helm ./`
-3. Install Kafka: `helm -n kafka upgrade --install kafka-release oci://registry-1.docker.io/bitnamicharts/kafka --create-namespace --version 23.0.7 -f values-kafka.yaml`
-**Note:** If you want to change namespace `kafka` and/or release name `kafka-release` of Kafka, please also change them in `values.yaml`. They are also used in templating.
-4. Install Airflow:
+2. Both install and upgrade the main chart: `helm upgrade --install --create-namespace -n mlops sfmlops-helm ./ -f values.yaml`
+3. Deploy Kafka: `helm -n kafka upgrade --install kafka-release oci://registry-1.docker.io/bitnamicharts/kafka --create-namespace --version 23.0.7 -f values-kafka.yaml`
+4. Deploy Airflow:
    1. `helm repo add apache-airflow https://airflow.apache.org`
    2. `helm -n airflow upgrade --install airflow apache-airflow/airflow --create-namespace --version 1.13.1 -f values-airflow.yaml`
 5. Forward Airflow UI port, so we can access: `kubectl port-forward svc/airflow-webserver 8080:8080 --namespace airflow`
+6. Install Ray (KubeRay):
+   1. Deploy KubeRay operator:
+      1. `helm repo add kuberay https://ray-project.github.io/kuberay-helm/ && helm repo update`
+      2. `helm upgrade --install -n mlops kuberay-operator kuberay/kuberay-operator --version 1.1.0-rc.0`
+   2. Deploy RayCluster Custom Resource (CR)
+      1. `helm upgrade --install -n mlops raycluster kuberay/ray-cluster --version 1.1.0-rc.0 --set 'image.tag=2.9.3-py39-cpu-aarch64'`
+
+**Note:** If you want to change namespace `kafka` and/or release name `kafka-release` of Kafka, please also change them in `values.yaml` and `KAFKA_BOOTSTRAP_SERVER` env var in `values-airflow.yaml`. They are also used in templating.
 
 ## Cleanup steps
 1. `helm uninstall sfmlops-helm -n mlops`
@@ -40,8 +47,9 @@ From doc: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-com
 MLflow: 5050
 Airflow: 8080
 Ray Dashboard: 8265
-Redis: 6379
 Nginx: 80
+Forecast service: 4242 (proxied by nginx)
+Training service: 4243 (proxied by nginx)
 
 ### bitnami/kafka helm install
 1. `helm repo add bitnami https://charts.bitnami.com/bitnami`
@@ -101,3 +109,7 @@ In fact, you can submit the training jobs directly from **ANY** service in the s
 
 ### Using Ray with external Redis
 If we restart the Ray container, all previous job history will be gone because Ray store them in-memory only. We can add an external Redis to manage these variables but, from using, this seems very very unstable, this is also stated in the official doc that using external Redis supports only on-cloud / Kubernetes. But I wanna try and... from time-to-time during the development, I found that the Ray cluster do not accept the Job submission and show error `Job supervisor actor could not be scheduled: The actor is not schedulable: The node specified via NodeAffinitySchedulingStrategy doesn't exist any more or is infeasible, and soft=False was specified.`. I could fix that by removing all data in redis by running `docker-compose exec redis redis-cli FLUSHALL` AND/OR removing Ray container and rebuild it again. But it's annoying and time consuming. So in the end, I got rid of external Redis for Ray, Bye~.
+
+## References
+- Airflow Helm: https://airflow.apache.org/docs/helm-chart/stable/index.html
+- Bitnami Kafka Helm: https://github.com/bitnami/charts/tree/main/bitnami/kafka
