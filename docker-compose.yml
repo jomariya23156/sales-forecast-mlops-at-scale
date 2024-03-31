@@ -97,7 +97,7 @@ services:
     # sales forecasst service
     forecast-service:
         platform: linux/arm64
-        image: ariya23156/sale-forecast-service:latest
+        image: ariya23156/sfmlops-forecast-service:latest
         container_name: forecast-service
         build:
             context: ./services/forecast-service

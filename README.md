@@ -36,6 +36,7 @@ From doc: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-com
    2. Deploy RayCluster Custom Resource (CR)
       1. `helm upgrade --install -n mlops raycluster kuberay/ray-cluster --version 1.1.0-rc.0 --set 'image.tag=2.9.3-py39-cpu-aarch64'`
       2. Verify by `kubectl get rayclusters`
+7. Forward Ray Dashboard: `kubectl port-forward --address 0.0.0.0 service/ray-head-service 8265:8265`
 
 **Note:** If you want to change namespace `kafka` and/or release name `kafka-release` of Kafka, please also change them in `values.yaml` and `KAFKA_BOOTSTRAP_SERVER` env var in `values-airflow.yaml`. They are also used in templating.
 

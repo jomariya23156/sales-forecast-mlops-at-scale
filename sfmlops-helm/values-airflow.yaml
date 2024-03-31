@@ -7,6 +7,10 @@ images:
     repository: ariya23156/sfmlops-airflow-spark
     tag: latest
 
+web:
+  service:
+    type: LoadBalancer
+
 ports:
   airflowUI: 8080
 
@@ -41,3 +45,5 @@ env:
     value: "jdbc:postgresql://postgres-service.mlops.svc.cluster.local:5432/spark_pg_db"
   - name: KAFKA_BOOTSTRAP_SERVER
     value: "kafka-release.kafka.svc.cluster.local:9092"
+  - name: NGINX_HOST_NAME
+    value: localhost

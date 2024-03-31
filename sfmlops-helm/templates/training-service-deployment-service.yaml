@@ -24,7 +24,7 @@ spec:
             - name: RAY_DASHBOARD_HOST
               value: ray-head-service
             - name: RAY_DASHBOARD_PORT
-              value: 8265
+              value: "8265"
 ---
 
 apiVersion: v1

@@ -5,20 +5,37 @@ kind: Ingress
 metadata:
   name: ingress-service
   annotations:
-    # nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "86400"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "700"
     nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
     nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
-  - http:
+  - host: localhost
+    http:
       paths:
-      - path: /
+      # capture group 1 will match with empty str
+      # so this = no rewrite
+      - path: /()(.*)
         pathType: Prefix
         backend:
           service:
             name: web-ui-service
             port:
               number: {{ .Values.webUiPort }}
+      - path: /api/trainers/()(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: training-service-service
+            port:
+              number: {{ .Values.trainingServicePort }}
+      - path: /api/forecasters/()(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: forecast-service-service
+            port:
+              number: {{ .Values.forecastServicePort }}

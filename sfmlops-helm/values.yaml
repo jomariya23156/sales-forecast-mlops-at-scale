@@ -7,6 +7,9 @@ webUiLabel: web-ui
 trainingServiceLabel: training-service
 trainingServicePort: 4243
 
+forecastServiceLabel: forecast-service
+forecastServicePort: 4242
+
 mlflowPort: 5050
 mlflowLabel: mlflow
 mlflowPvcName: mlflow-pvc

@@ -41,9 +41,9 @@ spec:
                 name: global-configmap
           env:
             - name: NGINX_HOST_NAME
-              value: nginx
+              value: localhost
             - name: FORECAST_ENDPOINT_URL
-              value: http://nginx/api/forecasters/forecast
+              value: http://localhost/api/forecasters/forecast
             - name: DB_CONNECTION_URL
               value: "postgresql://spark_user:SuperSecurePwdHere@postgres-service:{{ .Values.postgresPort }}/spark_pg_db"
 ---
