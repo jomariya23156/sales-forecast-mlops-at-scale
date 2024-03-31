@@ -5,12 +5,15 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from ray.job_submission import JobSubmissionClient, JobStatus
 
+RAY_DASHBOARD_HOST = os.getenv("RAY_DASHBOARD_HOST", "ray")
 RAY_DASHBOARD_PORT = os.getenv("RAY_DASHBOARD_PORT", "8265")
 
 log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
 
-ray_job_client = JobSubmissionClient(f"http://ray:{RAY_DASHBOARD_PORT}")
+ray_job_client = JobSubmissionClient(
+    f"http://{RAY_DASHBOARD_HOST}:{RAY_DASHBOARD_PORT}"
+)
 
 app = FastAPI()
 

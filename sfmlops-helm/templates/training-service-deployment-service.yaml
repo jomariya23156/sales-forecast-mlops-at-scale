@@ -21,10 +21,10 @@ spec:
             - configMapRef:
                 name: global-configmap
           env:
-            - name: MLFLOW_TRACKING_URI
-              value: "http://mlflow:{{ .Values.mlflowPort }}"
-            - name: DB_CONNECTION_URL
-              value: "postgresql://spark_user:SuperSecurePwdHere@postgres:{{ .Values.postgresPort }}/spark_pg_db"
+            - name: RAY_DASHBOARD_HOST
+              value: ray-head-service
+            - name: RAY_DASHBOARD_PORT
+              value: 8265
 ---
 
 apiVersion: v1
