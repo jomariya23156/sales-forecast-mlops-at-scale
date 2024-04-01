@@ -18,7 +18,7 @@ spec:
             claimName: {{ .Values.mlflowPvcName }}
       containers:
         - name: mlflow
-          image: ariya23156/sfmlops-mlflow
+          image: {{ .Values.containerMainImage.mlflow }}
           ports:
             - containerPort: {{ .Values.mlflowPort }}
           volumeMounts:

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: web-ui
-          image: ariya23156/sfmlops-web-ui
+          image: {{ .Values.containerMainImage.webUi }}
           imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.webUiPort }}

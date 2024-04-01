@@ -34,7 +34,7 @@ spec:
       spec:
         containers:
         - name: ray-head
-          image: ariya23156/sfmlops-ray
+          image: {{ .Values.containerMainImage.ray }}
           imagePullPolicy: Always
           ports:
           - containerPort: 6379
@@ -109,7 +109,7 @@ spec:
       spec:
         containers:
         - name: ray-worker
-          image: ariya23156/sfmlops-ray
+          image: {{ .Values.containerMainImage.ray }}
           imagePullPolicy: Always
           lifecycle:
             preStop:

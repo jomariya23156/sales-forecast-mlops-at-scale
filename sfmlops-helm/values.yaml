@@ -1,11 +1,10 @@
-containerBaseImage:
-  dataProducer:
-  trainingService:
-  forecastService:
-  mlflow:
-  ray:
-  webUi:
-
+containerMainImage:
+  dataProducer: ariya23156/sfmlops-data-producer
+  trainingService: ariya23156/sfmlops-training-service
+  forecastService: ariya23156/sfmlops-forecast-service
+  mlflow: ariya23156/sfmlops-mlflow
+  ray: ariya23156/sfmlops-ray:latest-amd64
+  webUi: ariya23156/sfmlops-web-ui
 
 kafkaReleaseName: kafka-release
 kafkaNamespace: kafka

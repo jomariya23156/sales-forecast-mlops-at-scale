@@ -18,7 +18,7 @@ spec:
             claimName: {{ .Values.mlflowPvcName }}
       containers:
         - name: forecast-service
-          image: ariya23156/sfmlops-forecast-service
+          image: {{ .Values.containerMainImage.forecastService }}
           imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.forecastServicePort }}
