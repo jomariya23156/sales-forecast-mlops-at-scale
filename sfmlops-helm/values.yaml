@@ -1,3 +1,12 @@
+containerBaseImage:
+  dataProducer:
+  trainingService:
+  forecastService:
+  mlflow:
+  ray:
+  webUi:
+
+
 kafkaReleaseName: kafka-release
 kafkaNamespace: kafka
 
