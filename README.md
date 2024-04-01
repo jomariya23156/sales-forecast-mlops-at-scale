@@ -12,23 +12,44 @@ Modification made:
 - Note when starting: need to specify both compose files i.e. `docker-compose -f docker-compose.yml -f docker-compose-airflow.yml`
 From doc: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html
 
-## Requirements
-1. Docker
-2. Kubernetes
-3. Helm
+# Development environment
+1. Docker (ref: Docker version 24.0.6, build ed223bc)
+2. Kubernetes (ref: v1.27.2 (via Docker Desktop))
+3. Helm (ref: v3.14.3)
 
-## How to run using Docker Compose
-1. `docker-compose -f docker-compose.yml -f docker-compose-airflow.yml up -d`
-2. That's it!
+# Tools / Technologies
+Note: Most of the ports can be customized in the `.env` file at the root of this repository (or `values.yaml` and ConfigMap for Helm). Here are the defaults.
+- Machine Learning platform / Experiment tracking: [MLflow](https://mlflow.org/) [port: 5050]
+- Pipeline orchestrator: [Airflow](https://airflow.apache.org/) [port: 8080]
+- Model distributed training and scaling: [Ray](https://www.ray.io/) [port: 8265 & port: 4243 (training coordinator / job submitter)]
+- Reverse proxy: [Nginx](https://www.nginx.com/) and [ingress-nginx](https://github.com/kubernetes/ingress-nginx) (for Kubernetes) [port: 80]
+- Web Interface: [Streamlit](https://streamlit.io/) [port: 8000] *proxied by nginx
+- Machine Learning service deployment: [FastAPI](https://fastapi.tiangolo.com/), [Uvicorn](https://www.uvicorn.org/), [Gunicorn](https://gunicorn.org/) [port: 4242] *proxied by nginx
+- Databases: [PostgreSQL](https://www.postgresql.org/) [port: 5432], [Prometheus](https://prometheus.io/) [port: 9090]
+- Database UI for Postgres: [pgAdmin](https://www.pgadmin.org/) [port: 16543]
+- Overall system monitoring & dashboard: [Grafana](https://grafana.com/) [port: 3000]
+- Distributed data streaming: [Kafka](https://kafka.apache.org/) [port: 9092]
+- Forecast modeling framework: [Prophet](https://facebook.github.io/prophet/docs/quick_start.html)
+- Stream processing: [Spark Streaming](https://spark.apache.org/streaming/)
+- Cloud platform: [Google Cloud Platform](https://cloud.google.com/)
+- CICD: [GitHub Actions](https://github.com/features/actions)
+- Platform: [Docker](https://www.docker.com/), [Kubernetes](https://kubernetes.io/), [Helm](https://helm.sh/)
 
-## How to run Kubernetes/Helm
+# How to use
+## With Docker Compose
+1. [Optional] In case you wanna build (not pulling images): `docker-compose build`
+2. `docker-compose -f docker-compose.yml -f docker-compose-airflow.yml up -d`
+3. That's it!
+
+## With Kubernetes/Helm
+*Note:* The system is quite large and heavy... I recommend running local just for testing one go, then if it works, just go to cloud if you wanna play around longer OR stick with Docker Compose (it went smoother in my case)
 1. `cd sfmlops-helm` and `helm dependency build` to fetch all dependencies
 2. Both install and upgrade the main chart: `helm upgrade --install --create-namespace -n mlops sfmlops-helm ./ -f values.yaml -f values-ray.yaml`
 3. Deploy Kafka:
-   1. `helm repo add bitnami https://charts.bitnami.com/bitnami`
+   1. [Only 1st time] `helm repo add bitnami https://charts.bitnami.com/bitnami`
    2. `helm -n kafka upgrade --install kafka-release oci://registry-1.docker.io/bitnamicharts/kafka --create-namespace --version 23.0.7 -f values-kafka.yaml`
 4. Deploy Airflow:
-   1. `helm repo add apache-airflow https://airflow.apache.org`
+   1. [Only 1st time] `helm repo add apache-airflow https://airflow.apache.org`
    2. `helm -n airflow upgrade --install airflow apache-airflow/airflow --create-namespace --version 1.13.1 -f values-airflow.yaml`
 5. Forward Airflow UI port, so we can access: `kubectl port-forward svc/airflow-webserver 8080:8080 --namespace airflow`
 
@@ -38,18 +59,6 @@ From doc: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-com
 1. `helm uninstall sfmlops-helm -n mlops`
 2. `helm uninstall kafka-release -n kafka`
 3. `helm uninstall airflow -n airflow`
-
-## Service port:
-MLflow: 5050
-Airflow: 8080
-Ray Dashboard: 8265
-Nginx: 80
-Forecast service: 4242 (proxied by nginx)
-Training service: 4243 (proxied by nginx)
-Postgres: 5432
-PGadmin: 16543
-Kafka: 9092
-Kafka UI: 8800
 
 ### Note on Kafka Docker Compose and Helm
 Kafka services on Docker Compose and Halm are different in settings, mainly in Docker Compose, we use KRaft for config management (which is newer), but in Helm, we use ZooKeeper because, honestly, I'm not managed to pull it off with KRaft, sorry :'( (It's quite complex).

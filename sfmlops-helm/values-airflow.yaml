@@ -49,6 +49,6 @@ env:
   - name: TRAINING_SERVICE_SERVER
     value: "training-service-service.mlops.svc.cluster.local:4243"
   - name: TRAINING_SERVICE_URL_PREFIX
-    value: # this is intentional to pass in an empty string
+    value: "" # this is intentional to pass in an empty string
   - name: FORECAST_ENDPOINT_URL
     value: "http://forecast-service-service.mlops.svc.cluster.local:4242/forecast"
