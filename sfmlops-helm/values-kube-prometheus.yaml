@@ -1,0 +1,10 @@
+prometheus:
+  service:
+    type: LoadBalancer
+
+## Grafana default port is 80 which can conflict with our main nginx
+## if we are running locally, so just leave it as default
+grafana:
+  adminPassword: admin
+  # service:
+  #   type: LoadBalancer
