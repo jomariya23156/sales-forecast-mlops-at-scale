@@ -115,5 +115,4 @@ jobs:
           # to put this into matrix
           ## for amd64 (x86_64) please leave ARCH_TRAILING_IMG_NAME empty like
           ## ARCH_TRAILING_IMG_NAME=
-          build-args: |
-            ARCH_TRAILING_IMG_NAME=${{ matrix.platform == 'linux/amd64' ? '' : '-aarch64' }}
+          build-args: "ARCH_TRAILING_IMG_NAME=${{ matrix.platform == 'linux/amd64' ? '' : '-aarch64' }}"
