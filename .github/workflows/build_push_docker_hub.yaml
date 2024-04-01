@@ -67,8 +67,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           # Hardcoded all build-args here, couldn't find a proper way
           # to put this into matrix
-          ## for amd64 (x86_64) please leave ARCH_TRAILING_IMG_NAME empty
+          ## for amd64 (x86_64) please leave ARCH_TRAILING_IMG_NAME empty like
+          ## ARCH_TRAILING_IMG_NAME=
           build-args: |
             AIRFLOW_HOME=/opt/airflow
             MLFLOW_ARTIFACT_ROOT=/storage/mlruns
-            ARCH_TRAILING_IMG_NAME=""
+            ARCH_TRAILING_IMG_NAME=
