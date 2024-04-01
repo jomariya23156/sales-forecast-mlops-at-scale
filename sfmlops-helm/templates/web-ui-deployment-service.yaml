@@ -15,6 +15,7 @@ spec:
       containers:
         - name: web-ui
           image: ariya23156/sfmlops-web-ui
+          imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.webUiPort }}
           livenessProbe:

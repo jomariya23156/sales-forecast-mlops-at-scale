@@ -72,7 +72,8 @@ Prerequisites: GKE Cluster (Standard cluster, *NOT* Autopilot), Artifact Registr
 2. Download your Service Account's JSON key
 3. Activate your service account: `gcloud auth activate-service-account --key-file=<path to the JSON key>`
 4. Connect local kubectl to cloud `gcloud container clusters get-credentials <GKE_CLUSTER_NAME> --zone <GKE_ZONE> --project <PROJECT_NAME>`
-5. Create a namespace for airflow in prior `kubectl create namespace airflow` because our main chart contains 1 manifest pointing to 'airflow' namespace instead of 'mlops' like the rest. On local, it works pretty fine but on GCP it seems like it cannot auto create 'airflow' namespace during helm install mlops namespace.
+5. Create a namespace for airflow in prior `kubectl create namespace airflow` because our main chart contains 1 manifest `spark-streaming-pvc` pointing to 'airflow' namespace instead of 'mlops' like the rest. On local, it works pretty fine but on GCP it seems like it cannot auto create 'airflow' namespace during helm install mlops namespace.
+6. Follow the steps in **With Kubernetes/Helm (Local cluster)** section
 
 ## Cleanup steps
 1. `helm uninstall sfmlops-helm -n mlops`

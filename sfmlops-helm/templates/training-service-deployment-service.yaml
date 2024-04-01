@@ -15,6 +15,7 @@ spec:
       containers:
         - name: training-service
           image: ariya23156/sfmlops-training-service
+          imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.trainingServicePort }}
           envFrom:

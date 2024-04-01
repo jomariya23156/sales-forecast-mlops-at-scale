@@ -15,6 +15,7 @@ spec:
       containers:
         - name: data-producer
           image: ariya23156/sfmlops-data-producer
+          imagePullPolicy: Always
           resources:
             requests:
               cpu: 100m

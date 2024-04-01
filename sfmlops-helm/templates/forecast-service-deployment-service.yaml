@@ -19,6 +19,7 @@ spec:
       containers:
         - name: forecast-service
           image: ariya23156/sfmlops-forecast-service
+          imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.forecastServicePort }}
           volumeMounts:
