@@ -13,8 +13,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: localhost
-    http:
+  - http:
       paths:
       # capture group 1 will match with empty str
       # so this = no rewrite

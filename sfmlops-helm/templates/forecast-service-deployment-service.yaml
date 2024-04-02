@@ -12,6 +12,20 @@ spec:
       labels:
         component: {{ .Values.forecastServiceLabel }}
     spec:
+      # this is a just-work solution for configuring permission for pvc,
+      # but introduces a security risk
+      # in real production, please setup user and group id properly in each image
+      # and assign enough permissions for that
+      initContainers:
+        - name: change-ownership-container
+          image: busybox
+          command: ["/bin/chmod", "-R", "777", {{ .Values.mlflowArtifactRoot }}] # Adjust mount path if needed
+          securityContext:
+            runAsUser: 0
+            privileged: true
+          volumeMounts:
+            - name: mlflow-data
+              mountPath: {{ .Values.mlflowArtifactRoot }}
       volumes:
         - name: mlflow-data
           persistentVolumeClaim:

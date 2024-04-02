@@ -1,63 +1,66 @@
-# name: Build, Push, and Deploy to GKE
+name: Build, Push, and Deploy to GKE
 
-# on:
-#   push:
-#     branches:
-#       - master
+on:
+  push:
+    branches:
+      - master
 
-# env:
-#   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
-#   GKE_CLUSTER: sfmlops-cluster # cluster name
-#   GKE_ZONE: asia-southeast1-a # cluster zone
-#   IMAGE_TAG: ${{ github.sha }} # use commit sha as a image tag
-#   GAR_ZONE: asia-southeast1 # artifact registry zone
-#   GAR_REPO: sfmlops-registry # artifact registry repository
+env:
+  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+  GKE_CLUSTER: sfmlops-cluster # cluster name
+  GKE_ZONE: asia-southeast1-a # cluster zone
+  IMAGE_TAG: ${{ github.sha }} # use commit sha as a image tag
+  GAR_ZONE: asia-southeast1 # artifact registry zone
+  GAR_REPO: sfmlops-registry # artifact registry repository
 
-# jobs:
-#   build_and_push_images:
-#     name: Setup, Build, Publish, and Deploy to GCP
-#     runs-on: ubuntu-latest
-#     environment: production
-#     strategy:
-#       matrix:
-#         image: [
-#           { name: web-ui, context: ./services/web-ui, file: ./services/web-ui/Dockerfile, buildargs: "" },
-#           { name: training-service, context: ./services/training-service, file: ./services/training-service/Dockerfile, buildargs: "" },
-#           { name: data-producer, context: ./services/data-producer, file: ./services/data-producer/Dockerfile, buildargs: "" },
-#           { name: mlflow, context: ./services/mlflow, file: ./services/mlflow/Dockerfile, buildargs: "" },
-#           { name: airflow-spark, context: ./services/airflow, file: ./services/airflow/Dockerfile, buildargs: "--build-arg AIRFLOW_HOME=/opt/airflow" },
-#           { name: ray, context: ./services/ray, file: ./services/ray/Dockerfile, buildargs: "--build-arg MLFLOW_ARTIFACT_ROOT=/storage/mlruns --build-arg ARCH_TRAILING_IMG_NAME=-aarch64" },
-#           { name: forecast-service, context: ./services/forecast-service, file: ./services/forecast-service/Dockerfile, buildargs: "" }
-#         ]
-#     steps:
-#     - name: Checkout
-#       uses: actions/checkout@v3
+jobs:
+  build_and_push_images:
+    name: Setup, Build, Publish, and Deploy to GCP
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      matrix:
+        image: [
+          { name: web-ui, context: ./services/web-ui, file: ./services/web-ui/Dockerfile, buildargs: "" },
+          { name: training-service, context: ./services/training-service, file: ./services/training-service/Dockerfile, buildargs: "" },
+          { name: data-producer, context: ./services/data-producer, file: ./services/data-producer/Dockerfile, buildargs: "" },
+          { name: mlflow, context: ./services/mlflow, file: ./services/mlflow/Dockerfile, buildargs: "" },
+          { name: airflow-spark, context: ./services/airflow, file: ./services/airflow/Dockerfile, buildargs: "--build-arg AIRFLOW_HOME=/opt/airflow" },
+          { name: ray, context: ./services/ray, file: ./services/ray/Dockerfile, buildargs: "--build-arg MLFLOW_ARTIFACT_ROOT=/storage/mlruns --build-arg ARCH_TRAILING_IMG_NAME=" },
+          { name: forecast-service, context: ./services/forecast-service, file: ./services/forecast-service/Dockerfile, buildargs: "" }
+        ]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
 
-#     # setup gcloud cli
-#     - name: Authenticate
-#       id: auth
-#       uses: google-github-actions/auth@v2
-#       with:
-#         credentials_json: ${{ secrets.GKE_SA_KEY }}
+    # setup gcloud cli
+    - name: Authenticate
+      id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GKE_SA_KEY }}
 
-#     # config docker to use gcloud cli tool as a credential
-#     # helper for authentication
-#     - name: Docker config
-#       run: |-
-#         gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://$GAR_ZONE-docker.pkg.dev
+    # config docker to use gcloud cli tool as a credential
+    # helper for authentication
+    - name: Docker config
+      run: |-
+        gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://$GAR_ZONE-docker.pkg.dev
 
-#     # Get GKE credentials
-#     - name: Setup GKE credentials
-#       uses: google-github-actions/get-gke-credentials@v2
-#       with:
-#         cluster_name: ${{ env.GKE_CLUSTER }}
-#         location: ${{ env.GKE_ZONE }}
+    # Get GKE credentials
+    - name: Setup GKE credentials
+      uses: google-github-actions/get-gke-credentials@v2
+      with:
+        cluster_name: ${{ env.GKE_CLUSTER }}
+        location: ${{ env.GKE_ZONE }}
 
-#     - name: Build and push ${{ matrix.image.name }} Docker image
-#       run: |-
-#         docker build ${{ matrix.image.buildargs }} \
-#           --tag "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/${{ matrix.image.name }}:${{ github.sha }}" \
-#           --tag "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/${{ matrix.image.name }}:latest" \
-#           -f ${{ matrix.image.file }} ${{ matrix.image.context }}
-#         docker push "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/${{ matrix.image.name }}:${{ github.sha }}"
-#         docker push "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/${{ matrix.image.name }}:latest"
+    - name: Build and push ${{ matrix.image.name }} Docker image
+      run: |-
+        docker build ${{ matrix.image.buildargs }} \
+          --tag "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/${{ matrix.image.name }}:${{ github.sha }}" \
+          --tag "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/${{ matrix.image.name }}:latest" \
+          -f ${{ matrix.image.file }} ${{ matrix.image.context }}
+        docker push "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/${{ matrix.image.name }}:${{ github.sha }}"
+        docker push "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/${{ matrix.image.name }}:latest"
+
+    # you can also consider adding another step to run helm/kubectl commands for deployment
+    # but since sometimes the command freezes (espicially for airflow), I decide to not include it

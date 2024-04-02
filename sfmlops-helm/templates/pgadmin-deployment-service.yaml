@@ -12,10 +12,24 @@ spec:
       labels:
         component: {{ .Values.pgadminLabel }}
     spec:
+      # this is a just-work solution for configuring permission for pvc,
+      # but introduces a security risk
+      # in real production, please setup user and group id properly in each image
+      # and assign enough permissions for that
+      initContainers:
+        - name: change-ownership-container
+          image: busybox
+          command: ["/bin/chmod", "-R", "777", "/var/lib/pgadmin"] # Adjust mount path if needed
+          securityContext:
+            runAsUser: 0
+            privileged: true
+          volumeMounts:
+            - name: pgadmin-data
+              mountPath: /var/lib/pgadmin
       volumes:
         - name: pgadmin-data
           persistentVolumeClaim:
-            claimName: {{ .Values.postgresPvcName }}
+            claimName: {{ .Values.pgadminPvcName }}
       containers:
         - name: pgadmin
           image: dpage/pgadmin4

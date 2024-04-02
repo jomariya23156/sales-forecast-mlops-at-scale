@@ -8,9 +8,13 @@ images:
     tag: latest
     pullPolicy: Always
 
-web:
+webserver:
   service:
     type: LoadBalancer
+  defaultUser:
+    enabled: true
+    username: admin
+    password: admin
 
 ports:
   airflowUI: 8080

@@ -68,7 +68,7 @@ jobs:
           build-args: |
             AIRFLOW_HOME=/opt/airflow
 
-  build_and_push_ray_arm64: # Job for building and pushing the images
+  build_and_push_ray_arm64: # Job for building and pushing the Ray image for arm64 platform
     name: Build and Push Ray arm64 Image
     runs-on: ubuntu-latest
     needs: shared_steps # Dependency on the shared steps
@@ -110,7 +110,7 @@ jobs:
             MLFLOW_ARTIFACT_ROOT=/storage/mlruns
             ARCH_TRAILING_IMG_NAME=-aarch64
 
-  build_and_push_ray_amd64: # Job for building and pushing the images
+  build_and_push_ray_amd64: # Job for building and pushing the Ray image for amd64 platform
     name: Build and Push Ray amd64 Image
     runs-on: ubuntu-latest
     needs: shared_steps # Dependency on the shared steps

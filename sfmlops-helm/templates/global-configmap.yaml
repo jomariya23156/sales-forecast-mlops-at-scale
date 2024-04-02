@@ -21,7 +21,7 @@ data:
   KAFKA_TOPIC: "sale_rossman_store"
   SALES_TABLE_NAME: "rossman_sales"
   FORECAST_TABLE_NAME: "forecast_results"
-  MLFLOW_ARTIFACT_ROOT: "/storage/mlruns/"
+  MLFLOW_ARTIFACT_ROOT: "/storage/mlruns/" # when working on-cloud, you must change this to object storage path like gs://<bucket>/<path>, or if you just wanna try out, create a cluster with only 1 node would do
   AIRFLOW_UID: "501"
   AIRFLOW_PROJ_DIR: "./services/airflow"
   SPARK_STREAM_CHECKPOINTS_PATH: "/opt/airflow/spark_streaming_checkpoints"
