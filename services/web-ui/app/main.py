@@ -131,7 +131,7 @@ if __name__ == "__main__":
                 req_body = build_forecast_request_body(
                     input_store_id, input_product_name, n_days
                 )
-                st.write("POSTing to the forecast service...", FORECAST_ENDPOINT_URL)
+                st.write("POSTing to the forecast service...")
                 resp = requests.post(FORECAST_ENDPOINT_URL, json=req_body)
                 st.success("Success posting to the forecast service")
                 st.json(resp.json())

@@ -21,7 +21,7 @@ spec:
           image: busybox
           command: ["/bin/chmod", "-R", "777", "/var/lib/pgadmin"] # Adjust mount path if needed
           securityContext:
-            runAsUser: 0
+            runAsUser: 0 # 0 = root
             privileged: true
           volumeMounts:
             - name: pgadmin-data

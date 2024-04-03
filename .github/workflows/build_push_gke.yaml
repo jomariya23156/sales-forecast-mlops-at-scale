@@ -17,7 +17,6 @@ jobs:
   build_and_push_images:
     name: Setup, Build, Publish, and Deploy to GCP
     runs-on: ubuntu-latest
-    environment: production
     strategy:
       matrix:
         image: [
@@ -63,4 +62,4 @@ jobs:
         docker push "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/${{ matrix.image.name }}:latest"
 
     # you can also consider adding another step to run helm/kubectl commands for deployment
-    # but since sometimes the command freezes (espicially for airflow), I decide to not include it
+    # but since sometimes the command freezes (especially for airflow), I decide to not include it.

@@ -2,37 +2,6 @@ version: '3.8'
 
 services:
 
-    # dev workspace
-    jupyter:
-        # platform: linux/x86_64 # for others (mostly) or can just remove this line
-        platform: linux/arm64 # for Mac M1
-        container_name: jupyter-dev-repo
-        shm_size: '2gb'
-        build:
-            context: ./services/jupyter
-            dockerfile: Dockerfile
-            args:
-                NB_USER: ${JUPYTER_USER}
-                NB_PWD: 123456789
-                NB_UID: 1412
-                CONDA_DIR: /opt/anaconda3
-                ARCH: aarch64 # aarch64 for Mac M1 | x86_64 for others (mostly)
-                JUPYTER_PORT: ${JUPYTER_PORT}
-                MLFLOW_ARTIFACT_ROOT: ${MLFLOW_ARTIFACT_ROOT}
-                CENTRAL_STORAGE_PATH: /home/${JUPYTER_USER}/central_storage
-                MAIN_CONDA_ENV_NAME: computer-viz-dl
-        env_file:
-            - .env
-        environment:
-            - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
-        networks:
-            - forecast-network
-        ports:
-            - "${JUPYTER_PORT}:${JUPYTER_PORT}"
-        volumes:
-            - ./:/home/${JUPYTER_USER}/workspace/
-            - conda-data:/opt/anaconda3
-
     kafka:
         platform: linux/arm64
         container_name: kafka
@@ -72,11 +41,11 @@ services:
         networks:
             - forecast-network
 
-    # mockup api producer
+    # mockup api data producer
     data-producer:
         platform: linux/arm64
         container_name: data-producer
-        image: ariya23156/sfmlops-data-producer
+        image: ariya23156/sfmlops-data-producer:latest
         build:
             context: ./services/data-producer
             dockerfile: Dockerfile
@@ -118,7 +87,7 @@ services:
     web-ui:
         platform: linux/arm64
         container_name: web-ui
-        image: ariya23156/sfmlops-web-ui
+        image: ariya23156/sfmlops-web-ui:latest
         build:
             context: ./services/web-ui
             dockerfile: Dockerfile
@@ -140,7 +109,7 @@ services:
     training-service:
         platform: linux/arm64
         container_name: training-service
-        image: ariya23156/sfmlops-training-service
+        image: ariya23156/sfmlops-training-service:latest
         build:
             context: ./services/training-service
             dockerfile: Dockerfile
@@ -162,7 +131,7 @@ services:
     ray:
         platform: linux/arm64
         container_name: ray-head
-        image: ariya23156/sfmlops-ray
+        image: ariya23156/sfmlops-ray:latest-arm64
         build:
             context: ./services/ray
             dockerfile: Dockerfile
@@ -217,7 +186,7 @@ services:
     mlflow:
         platform: linux/arm64
         container_name: mlflow-server
-        image: ariya23156/sfmlops-mlflow
+        image: ariya23156/sfmlops-mlflow:latest
         # restart: always
         build:
             context: ./services/mlflow
@@ -359,5 +328,3 @@ volumes:
     kafka-data:
     prometheus-data:
     grafana-data:
-    # for dev
-    conda-data:
