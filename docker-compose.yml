@@ -53,7 +53,7 @@ services:
             - .env
         environment:
             - KAFKA_BOOTSTRAP_SERVER=kafka:9092
-            - DB_CONNECTION_URL=postgresql://spark_user:SuperSecurePwdHere@postgres:{POSTGRES_PORT}/spark_pg_db
+            - DB_CONNECTION_URL=postgresql://spark_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/spark_pg_db
         networks:
             - forecast-network
         volumes:

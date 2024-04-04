@@ -92,7 +92,8 @@ Prerequisites: Docker, Kubernetes, and Helm
 2. ```
    docker-compose -f docker-compose.yml -f docker-compose-airflow.yml up -d
    ```
-3. That's it!
+3. Sometimes it can freeze or fail the first time, especially if your machine is not that high in spec (like mine T_T). But you can wait a second, try the last command again and it should start up fine.
+4. That's it!
 
 **Note:** Most of the services' restart is left unspecified, so they won't restart on failures (because sometimes it's quite resource-consuming during development, you see I have a poor laptop lol).
 
