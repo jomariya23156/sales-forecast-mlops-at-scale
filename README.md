@@ -62,17 +62,24 @@ Note: Most of the service ports can be found and customized in the `.env` file a
 # How things work
 1. After you start up the system, the **data producer** will read and store the data of the last 5 months from `services/data-producer/datasets/rossman-store-sales/train_exclude_last_10d.csv` to **Postgres**. It does this by modifying the last date of the data to be *YESTERDAY*. Afterward, it will keep publishing new messages (from `train_only_last_19d.csv` in the same directory), technically *TODAY* data, to a **Kafka** topic every 10 seconds (infinite loop).
 2. There are two main DAGs in **Airflow**:
-   1. One to ingest data from this Kafka topic -> process and transform with **Spark Streaming**, -> and store it in Postgres *DAILY*
-   2. Another one is to pull the last four months of sales data in Postgres -> use it for training new **Prophet** models with **Ray** (*1,1115* models in total) and track and register them by **MLflow** -> use these newly trained models to predict the forecast of the upcoming week (next 7 days) -> store the forecasts to Postgres (another table) on a *WEEKLY* basis.
+   1. Daily DAG:  
+       \>\> Ingest data from this Kafka topic  
+       \>\> Process and transform with **Spark Streaming**  
+       \>\> Store it in Postgres  
+   2. Weekly DAG:  
+       \>\> Pull the last four months of sales data from Postgres  
+       \>\> Use it for training new **Prophet** models, with **Ray** (*1,1115* models in total), which are tracked and registered by **MLflow**  
+       \>\> Use these newly trained models to predict the forecast of the upcoming week (next 7 days)  
+       \>\> Store the forecasts in Postgres (another table)
 3. During training, you can monitor your system and infrastructure with **Grafana** and **Prometheus**.
 4. By default, the data stream from topic `sale_rossman_store` gets stored in `rossman_sales` table and forecast results in `forecast_results` table, you can use **pgAdmin** to access it.
 5. After the previous steps are executed successfully, you/users can now access the **Streamlit** website proxied by **Nginx**.
 6. This website fetches the latest 7 predictions (technically, the next 7 days) for each store and each product and displays them in a good-looking line chart (thanks to **Altair**)
 7. From the website, users can view sales forecast of any product from any store. Notice that the subtitle of the chart contains the model ID and version.
 8. Since these forecasts are made weekly, whether users access this website on Monday or Wednesday, they will see the same chart. If, during the week, the users somehow feel like the forecast prediction is out of sync or outdated, they can trigger retraining for a specific model of that product and store.
-9. When the users click a retrain button, the website will submit a model training job to the **training service** which then calls Ray to retrain this model. The retraining is pretty fast, usually done in under a minute, and it follows the same training strategy as the weekly training DAG (but of course, with the newest data possible).
+9.  When the users click a retrain button, the website will submit a model training job to the **training service** which then calls Ray to retrain this model. The retraining is pretty fast, usually done in under a minute, and it follows the same training strategy as the weekly training DAG (but of course, with the newest data possible).
 10. Right after retraining is done, users can select a number of future days to predict and click a forecast button to request the **forecasting service** to use the latest model to make forecasts.
-11. The result of new forecasts is then displayed in the line chart below. Notice that the model version number increased! Yoohoo! (note: For simplicity, this new forecast results won't be store anywhere.)
+11. The result of new forecasts is then displayed in the line chart below. Notice that the model version number increased! Yoohoo! (note: For simplicity, this new forecast result won't be stored anywhere.)
 
 # How to setup
 Prerequisites: Docker, Kubernetes, and Helm
