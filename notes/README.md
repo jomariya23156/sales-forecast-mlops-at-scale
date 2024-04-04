@@ -1,3 +1,4 @@
+# Table of contents
 - [Notes I took during the development](#notes-i-took-during-the-development)
   - [Forecast models training and retraining strategy](#forecast-models-training-and-retraining-strategy)
   - [Kafka Docker Compose and Helm](#kafka-docker-compose-and-helm)

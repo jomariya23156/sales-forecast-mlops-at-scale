@@ -3,7 +3,6 @@
 <p align="center"><b> ▶️ Highly scalable Cloud-native Machine Learning system ◀️ </b></p>
 
 # Table of contents
-- [Table of contents](#table-of-contents)
 - [Overview](#overview)
 - [Key Features](#key-features)
 - [Tools / Technologies](#tools--technologies)
@@ -79,30 +78,66 @@ Note: Most of the service ports can be found and customized in the `.env` file a
 Prerequisites: Docker, Kubernetes, and Helm
 
 ## With Docker Compose
-1. *[Optional]* In case you want to build (not pulling images): `docker-compose build`
-2. `docker-compose -f docker-compose.yml -f docker-compose-airflow.yml up -d`
+1. *(Optional)* In case you want to build (not pulling images):
+   ```
+   docker-compose build
+   ```
+2. ```
+   docker-compose -f docker-compose.yml -f docker-compose-airflow.yml up -d
+   ```
 3. That's it!
 
 **Note:** Most of the services' restart is left unspecified, so they won't restart on failures (because sometimes it's quite resource-consuming during development, you see I have a poor laptop lol).
 
 ## With Kubernetes/Helm (Local cluster)
 The system is quite large and heavy... I recommend running it locally just for setup testing purposes. Then if it works, just go off to the cloud if you want to play around longer OR stick with Docker Compose (it went smoother in my case)
-1. Install Helm `bash install-helm.sh`
-2. Create airflow namespace: `kubectl create namespace airflow`
+1. Install Helm
+   ```
+   bash install-helm.sh
+   ```
+2. Create airflow namespace:
+   ```
+   kubectl create namespace airflow
+   ```
 3. Deploy the main chart:
-   1. `cd sfmlops-helm` and `helm dependency build` to fetch all dependencies
-   2. `helm upgrade --install --create-namespace -n mlops sfmlops-helm ./ -f values.yaml -f values-ray.yaml`
+   1. Fetch all dependencies
+      ```
+      cd sfmlops-helm
+      helm dependency build
+      ```
+   2. ```
+      helm -n mlops upgrade --install sfmlops-helm ./ --create-namespace -f values.yaml -f values-ray.yaml
+      ```
 4. Deploy Kafka:
-   1. *[1st time only]* `helm repo add bitnami https://charts.bitnami.com/bitnami`
-   2. `helm -n kafka upgrade --install kafka-release oci://registry-1.docker.io/bitnamicharts/kafka --create-namespace --version 23.0.7 -f values-kafka.yaml`
+   1. (1st time only)
+      ```
+      helm repo add bitnami https://charts.bitnami.com/bitnami
+      ```
+   2. ```
+      helm -n kafka upgrade --install kafka-release oci://registry-1.docker.io/bitnamicharts/kafka --create-namespace --version 23.0.7 -f values-kafka.yaml
+      ```
 5. Deploy Airflow:
-   1. *[1st time only]* `helm repo add apache-airflow https://airflow.apache.org`
-   2. `helm -n airflow upgrade --install airflow apache-airflow/airflow --create-namespace --version 1.13.1 -f values-airflow.yaml`
-   3. Sometimes, you might get a timeout error from this command (if you do, it means your machine spec is too poor for this system (like mine lol)). It's totally fine. Just keep checking the status with kubectl, if all resources start up correctly, go with it otherwise try running the command again.
+   1. (1st time only)
+      ```
+      helm repo add apache-airflow https://airflow.apache.org
+      ```
+   2. ```
+      helm -n airflow upgrade --install airflow apache-airflow/airflow --create-namespace --version 1.13.1 -f values-airflow.yaml
+      ```
+   3. Sometimes, you might get a timeout error from this command (if you do, it means your machine spec is too poor for this system (like mine lol)). It's totally fine. Just keep checking the status with `kubectl`, if all resources start up correctly, go with it otherwise try running the command again.
 6. Deploy Prometheus and Grafana:
-   1. *[1st time only]* `helm repo add prometheus-community https://prometheus-community.github.io/helm-charts`
-   2. `helm -n monitoring upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack  --create-namespace --version 57.2.0 -f values-kube-prometheus.yaml`
-   3. Forward port for Grafana: `kubectl port-forward svc/kube-prometheus-stack-grafana 3000:80 -n monitoring` OR assign `grafana.service.type: LoadBalancer` in `values-kube-prometheus.yaml`
+   1. (1st time only)
+      ```
+      helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      ```
+   2. ```
+      helm -n monitoring upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack  --create-namespace --version 57.2.0 -f values-kube-prometheus.yaml
+      ```
+   3. Forward port for Grafana:
+      ```
+      kubectl port-forward svc/kube-prometheus-stack-grafana 3000:80 -n monitoring
+      ```
+      *OR* assign `grafana.service.type: LoadBalancer` in `values-kube-prometheus.yaml`
    4. One of the good things about kube-prometheus-stack is that it comes with many pre-installed/pre-configured dashboards for Kubernetes. Feel free to explore!
 7. That's it! Enjoy your highly scalable Machine Learning system for Sales forecasting! ;)
 
@@ -114,8 +149,14 @@ The system is quite large and heavy... I recommend running it locally just for s
 Prerequisites: GKE Cluster (Standard cluster, *NOT* Autopilot), Artifact Registry, Service Usage API, gcloud cli
 1. Follow this [Medium blog](https://medium.com/@gravish316/setup-ci-cd-using-github-actions-to-deploy-to-google-kubernetes-engine-ef465a482fd). Instead of using the default Service Account (as done in the blog), I recommend creating a new Service Account with Owner role for a quick and dirty run (but of course, please consult your cloud engineer if you have security concerns).
 2. Download your Service Account's JSON key
-3. Activate your Service Account: `gcloud auth activate-service-account --key-file=<PATH_TO_JSON_KEY>`
-4. Connect local kubectl to cloud: `gcloud container clusters get-credentials <GKE_CLUSTER_NAME> --zone <GKE_ZONE> --project <PROJECT_NAME>`
+3. Activate your Service Account:
+   ```
+   gcloud auth activate-service-account --key-file=<PATH_TO_JSON_KEY>
+   ```
+4. Connect local kubectl to cloud:
+   ```
+   gcloud container clusters get-credentials <GKE_CLUSTER_NAME> --zone <GKE_ZONE> --project <PROJECT_NAME>
+   ```
 5. Now `kubectl` (and `helm`) will work in the context of the GKE environment.
 6. Follow the steps in [With Kubernetes/Helm (Local cluster)](#with-kuberneteshelm-local-cluster) section
 7. If you face a timeout error when running helm commands for airflow or the system struggles to set up and work correctly, I recommend trying to upgrade your machine type in the cluster.
@@ -123,10 +164,12 @@ Prerequisites: GKE Cluster (Standard cluster, *NOT* Autopilot), Artifact Registr
 **Note:** For the machine type of node pool in the GKE cluster, from experiments, `e2-medium` (default) is not quite enough, especially for Airflow and Ray. In my case, I went for `e2-standard-8` with 1 node (explanation on why only 1 node is in [Important note on MLflow on Cloud](#important-note-on-mlflow-on-cloud) section). I also found myself the need to increase the quota for PVC in IAM too.
 
 ## Cleanup steps
-1. `helm uninstall sfmlops-helm -n mlops`
-2. `helm uninstall kafka-release -n kafka`
-3. `helm uninstall airflow -n airflow`
-4. `helm uninstall kube-prometheus-stack -n monitoring`
+```
+helm uninstall sfmlops-helm -n mlops
+helm uninstall kafka-release -n kafka
+helm uninstall airflow -n airflow
+helm uninstall kube-prometheus-stack -n monitoring
+```
 
 ## Important note on MLflow on Cloud
 In this setting, I set the MLflow's artifact path to point to a local path. Internally, MLflow expects this path to be accessible from both MLflow client and server (honestly, I'm not a fan of this model either). It is meant to be an object storage path like S3 (AWS) or Cloud Storage (GCP). For a full on-premises experience, we can create a Docker volume and mount it to the EXACT same path on both client and server to address this. In a local Kubernetes cluster, we can do the same thing by creating a PVC with `accessModes: ReadWriteOnce` (in `sfmlops-helm/templates/mlflow-pvc.yaml`).
