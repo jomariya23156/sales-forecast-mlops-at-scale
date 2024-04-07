@@ -21,7 +21,7 @@
 # Overview
 **"Sales Forecast MLOps at Scale"** delivers a full-stack, production-ready solution designed to streamline the entire sales forecasting system – from development and deployment to continuous improvement. It offers flexible deployment options, supporting both on-premises environments (Docker Compose, Kubernetes) and cloud-based setups (Kubernetes, Helm), ensuring adaptability to your infrastructure.
 
-Demo on YouTube: *VID LINK HERE*
+Demo on YouTube: https://youtu.be/PwV8TIsMEME
 
 <image src="./files/sfmlops_software_diagram.png">
 
